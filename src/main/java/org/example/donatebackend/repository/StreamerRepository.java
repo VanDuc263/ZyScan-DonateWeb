@@ -34,4 +34,6 @@ public interface StreamerRepository extends JpaRepository<StreamerEntity,Long> {
     ORDER BY s.followers DESC, s.createdAt DESC
     """)
     List<StreamerEntity> searchByKeyword(@Param("keyword") String keyword);
+
+
 }

@@ -19,6 +19,10 @@ public class StreamerEntity {
     @Column(nullable = false)
     private String displayName;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id", referencedColumnName = "streamer_id", insertable = false, updatable = false)
+    private StreamerSettingsEntity settings;
+
     @Column(unique = true,name = "token")
     private String token;
 
@@ -54,6 +58,14 @@ public class StreamerEntity {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public StreamerSettingsEntity getSettings() {
+        return settings;
+    }
+
+    public void setSettings(StreamerSettingsEntity settings) {
+        this.settings = settings;
     }
 
     public String getToken() {
