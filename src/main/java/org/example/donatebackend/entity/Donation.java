@@ -21,6 +21,12 @@ public class Donation {
     private Long donorId;
     private Double amount;
     private String message;
+
+    @Column(name = "status")
+    private String status;
+
+
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -32,7 +38,9 @@ public class Donation {
         this.id = id;
     }
 
+    public String getStatus() {return status;}
 
+    public void setStatus(String status) {this.status = status;}
 
     public String getDonorName() {
         return donorName;

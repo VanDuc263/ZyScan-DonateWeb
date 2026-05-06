@@ -28,6 +28,12 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/notifications/**").authenticated()
 
+                        .requestMatchers("/api/payments/create-qr").permitAll()
+                        .requestMatchers("/api/payments/*/status").permitAll()
+                        .requestMatchers("/api/payments/*/sandbox-simulate").permitAll()
+                        .requestMatchers("/api/payments/vietqr/callback").permitAll()
+                        .requestMatchers("/vqr/**").permitAll()
+
                         .requestMatchers("/api/user/**").hasAnyRole("USER", "STREAMER", "ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
