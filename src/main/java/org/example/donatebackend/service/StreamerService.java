@@ -4,6 +4,7 @@ import org.example.donatebackend.dto.request.StreamerRequest;
 import org.example.donatebackend.dto.response.SearchStreamerResponse;
 import org.example.donatebackend.dto.response.StreamerDetailResponse;
 import org.example.donatebackend.dto.response.TopStreamerResponse;
+import org.example.donatebackend.entity.NotificationEntity;
 import org.example.donatebackend.entity.StreamerEntity;
 import org.example.donatebackend.entity.UserEntity;
 import org.example.donatebackend.exception.AppException;
@@ -28,6 +29,9 @@ public class StreamerService {
 
     @Autowired
     private FileUploadService fileUploadService;
+
+    @Autowired
+    private NotificationService notificationService;
 
 
     public StreamerEntity createStreamer(StreamerRequest request){
@@ -57,6 +61,14 @@ public class StreamerService {
         userEntity.setRole(UserEntity.Role.STREAMER);
         userRepository.save(userEntity);
 
+        notificationService.createNotification(
+                userEntity.getId(),
+                NotificationEntity.NotificationType.STREAMER,
+                "Tạo trang ZyScan thành công",
+                "Trang nhận donate của bạn đã được tạo",
+                "/account/profile",
+                null
+        );
 
         return streamer;
     }
