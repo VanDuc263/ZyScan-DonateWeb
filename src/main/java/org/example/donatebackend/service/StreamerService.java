@@ -36,6 +36,9 @@ public class StreamerService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private PaymentAccountService paymentAccountService;
+
 
     public StreamerEntity createStreamer(StreamerRequest request){
         String username = Objects.requireNonNull(SecurityContextHolder.getContext()
@@ -82,12 +85,18 @@ public class StreamerService {
         if(streamer == null){
             new Throwable("streamer not found");
         }
+
         StreamerDetailResponse streamerDetailReponse = new StreamerDetailResponse();
+
         streamerDetailReponse.setStreamerId(streamer.getId());
         streamerDetailReponse.setDisplayName(streamer.getDisplayName());
         streamerDetailReponse.setAvatar(streamer.getAvatar());
         streamerDetailReponse.setThumb(streamer.getThumb());
         streamerDetailReponse.setFollowers(streamer.getFollowers());
+
+
+        String qrUrl = paymentAccountService.getQrUrlByStreamerId(streamer.getId());
+        streamerDetailReponse.setQrUrl(qrUrl);
 
         return streamerDetailReponse;
     }

@@ -16,14 +16,9 @@ public class PaymentAccountService {
     @Autowired
     private PaymentAccountRepository paymentAccountRepository;
 
-    @Autowired
-    private StreamerService streamerService;
 
 
-    public PaymentAccountEntity savePaymentAccount(PaymentAccountRequest paymentAccountRequest,String username){
-        Long streamerId = streamerService.getStreamerId(username);
-
-
+    public PaymentAccountEntity savePaymentAccount(PaymentAccountRequest paymentAccountRequest,Long streamerId){
 
         PaymentAccountEntity paymentAccountEntity = paymentAccountRepository.findByStreamerId(streamerId).orElse(new PaymentAccountEntity());
 
@@ -43,13 +38,11 @@ public class PaymentAccountService {
         return paymentAccountRepository.save(paymentAccountEntity);
     }
 
-    public String getQrUrl(String name) {
+    public String getQrUrlByStreamerId(Long streamerId) {
 
-        Long streamerId = streamerService.getStreamerId(name);
+        PaymentAccountEntity paymentAccountEntity =
+                paymentAccountRepository.findByStreamerId(streamerId).orElse(new PaymentAccountEntity());
 
-        PaymentAccountEntity paymentAccountEntity = paymentAccountRepository.findByStreamerId(streamerId).orElseThrow(
-                () -> new AppException(ErrorCode.INTERNAL_ERROR,"Payment account not found")
-        );
         return paymentAccountEntity.getQrTemplate();
     }
 }

@@ -78,7 +78,6 @@ public class StreamerController {
 
     @GetMapping("/{token}")
     public StreamerDetailResponse getByToken(@PathVariable String token) {
-        System.out.println(token);
         return streamerService.getByDonateToken(token);
     }
 
