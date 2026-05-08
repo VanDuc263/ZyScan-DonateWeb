@@ -22,5 +22,5 @@ public interface StreamerSettingsRepository
         SET config = CAST(:config AS jsonb)
         WHERE streamer_id = :streamerId
     """, nativeQuery = true)
-    void updateConfig(Long streamerId, String config);
+    int updateConfig(Long streamerId, String config);
 }

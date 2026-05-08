@@ -33,6 +33,9 @@ public class StreamerService {
     @Autowired
     private NotificationService notificationService;
 
+    @Autowired
+    private UserService userService;
+
 
     public StreamerEntity createStreamer(StreamerRequest request){
         String username = Objects.requireNonNull(SecurityContextHolder.getContext()
@@ -155,7 +158,20 @@ public class StreamerService {
         return url;
     }
 
+    public Long getStreamerId(String username) {
+        UserEntity user = userService.findByUsername(username);
 
+        if (user == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        StreamerEntity streamer = findByUserId(user.getId());
+
+        if (streamer == null) {
+            throw new RuntimeException("Streamer not found");
+        }
+        return streamer.getId();
+    }
 }
 
 

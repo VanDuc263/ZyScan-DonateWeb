@@ -33,24 +33,20 @@ public class StreamerSettingsService {
         return Map.of("config", parseJson(config));
     }
 
-    public void updateConfig(Long streamerId, String config) {
-        settingsRepo.updateConfig(streamerId, config);
+    public boolean updateConfig(String username, String config) {
+        System.out.println(config);
+        Long streamerId = streamerService.getStreamerId(username);
+
+        return settingsRepo.updateConfig(streamerId, config) > 0;
     }
     public Map<String, Object> getMyConfig(String username) {
-        UserEntity user = userService.findByUsername(username);
+        Long streamerId = streamerService.getStreamerId(username);
 
-        if (user == null) {
-            throw new RuntimeException("User not found");
-        }
-
-//        StreamerEntity streamer = streamerService.findByUserId(user.getId());
-//
-//        if (streamer == null) {
-//            throw new RuntimeException("Streamer not found");
-//        }
-
-        return getConfig(1L);
+        return getConfig(streamerId);
     }
+
+
+
     private Object parseJson(String json) {
         try {
             return objectMapper.readValue(json, Object.class);
