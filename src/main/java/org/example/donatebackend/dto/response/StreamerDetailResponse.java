@@ -8,6 +8,7 @@ public class StreamerDetailResponse {
     private String thumb;
     private String bio;
     private int followers;
+    private String qrUrl;
 
 
     public Long getStreamerId() {
@@ -67,4 +68,11 @@ public class StreamerDetailResponse {
         this.followers = followers;
     }
 
+    public String getQrUrl() {
+        return qrUrl;
+    }
+
+    public void setQrUrl(String qrUrl) {
+        this.qrUrl = qrUrl;
+    }
 }
