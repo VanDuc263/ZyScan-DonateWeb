@@ -41,30 +41,7 @@ public class DonationService {
     @Autowired
     private NotificationService notificationService;
 
-    public Long saveDonationFromPaidOrder(PaymentOrderEntity order) {
-        DonationRequest request = new DonationRequest();
-        request.setStreamerId(order.getStreamerId());
-        request.setDonorId(order.getDonorId());
-        request.setDonorName(order.getDonorName());
-        request.setAmount(order.getAmount());
-        request.setMessage(order.getMessage());
 
-        Donation savedDonation = createAndSaveDonation(request);
-
-        List<TopDonorResponse> topDonorResponses = updateTopDonorRanking(
-                savedDonation.getStreamer().getToken(),
-                savedDonation.getDonorName(),
-                savedDonation.getAmount()
-        );
-
-        DonationResponse response = buildDonationResponse(savedDonation, topDonorResponses);
-
-        sendDonationNotifications(savedDonation);
-
-        redisPublisher.publish(response);
-
-        return savedDonation.getId();
-    }
 
     private Donation createAndSaveDonation(DonationRequest req) {
         String uniqueContent = "DONATE-" + req.getStreamerId() + "-" + System.currentTimeMillis();
