@@ -17,18 +17,16 @@ public class Donation {
     private StreamerEntity streamer;
 
     private String donorName;
-    @Column(name = "donor_id")
     private Long donorId;
     private Double amount;
     private String message;
 
-    @Column(name = "status")
     private String status;
 
-
-
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    private String content;
+    private String referenceCode;
 
     public Long getId() {
         return id;
@@ -88,5 +86,21 @@ public class Donation {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getReferenceCode() {
+        return referenceCode;
+    }
+
+    public void setReferenceCode(String referenceCode) {
+        this.referenceCode = referenceCode;
     }
 }

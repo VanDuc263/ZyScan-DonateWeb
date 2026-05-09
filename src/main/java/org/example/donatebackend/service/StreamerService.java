@@ -93,6 +93,7 @@ public class StreamerService {
         streamerDetailReponse.setAvatar(streamer.getAvatar());
         streamerDetailReponse.setThumb(streamer.getThumb());
         streamerDetailReponse.setFollowers(streamer.getFollowers());
+        streamerDetailReponse.setToken(streamer.getToken());
 
 
         String qrUrl = paymentAccountService.getQrUrlByStreamerId(streamer.getId());

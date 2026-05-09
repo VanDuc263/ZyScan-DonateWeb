@@ -2,10 +2,14 @@ package org.example.donatebackend.controller;
 
 import org.example.donatebackend.dto.request.DonationRequest;
 import org.example.donatebackend.dto.response.DonationResponse;
+import org.example.donatebackend.dto.response.PaymentAccountResponse;
 import org.example.donatebackend.dto.response.TopDonorResponse;
 import org.example.donatebackend.entity.Donation;
 import org.example.donatebackend.service.DonationService;
+import org.example.donatebackend.service.StreamerService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,9 +20,17 @@ public class DonationController {
     @Autowired
     private DonationService donationService;
 
-    @PostMapping("/create")
-    public DonationResponse saveDonation(@RequestBody DonationRequest req) {
-        return donationService.saveDonation(req);
+    @Autowired
+    private StreamerService streamerService;
+
+
+
+    @PostMapping("/qr")
+    public ResponseEntity<PaymentAccountResponse> createDonationQR(
+            @RequestBody DonationRequest req,
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(donationService.createDonationQR(req,streamerService.getStreamerId(authentication.getName())));
     }
 
     @GetMapping("/{token}/top")

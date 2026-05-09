@@ -2,13 +2,12 @@ package org.example.donatebackend.service;
 
 import org.example.donatebackend.dto.request.DonationRequest;
 import org.example.donatebackend.dto.response.DonationResponse;
+import org.example.donatebackend.dto.response.PaymentAccountResponse;
 import org.example.donatebackend.dto.response.TopDonorResponse;
-import org.example.donatebackend.entity.Donation;
-import org.example.donatebackend.entity.NotificationEntity;
-import org.example.donatebackend.entity.PaymentOrderEntity;
-import org.example.donatebackend.entity.StreamerEntity;
+import org.example.donatebackend.entity.*;
 import org.example.donatebackend.redis.RedisPublisher;
 import org.example.donatebackend.repository.DonationRepository;
+import org.example.donatebackend.repository.PaymentAccountRepository;
 import org.example.donatebackend.repository.StreamerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +27,9 @@ public class DonationService {
     private DonationRepository donationRepository;
 
     @Autowired
+    private PaymentAccountRepository paymentAccountRepository;
+
+    @Autowired
     private RedisPublisher redisPublisher;
 
     @Autowired
@@ -38,24 +40,6 @@ public class DonationService {
 
     @Autowired
     private NotificationService notificationService;
-
-    public DonationResponse saveDonation(DonationRequest req) {
-        Donation savedDonation = createAndSaveDonation(req);
-
-        List<TopDonorResponse> topDonorResponses = updateTopDonorRanking(
-                savedDonation.getStreamer().getToken(),
-                savedDonation.getDonorName(),
-                savedDonation.getAmount()
-        );
-
-        DonationResponse response = buildDonationResponse(savedDonation, topDonorResponses);
-
-        sendDonationNotifications(savedDonation);
-
-        redisPublisher.publish(response);
-
-        return response;
-    }
 
     public Long saveDonationFromPaidOrder(PaymentOrderEntity order) {
         DonationRequest request = new DonationRequest();
@@ -83,6 +67,8 @@ public class DonationService {
     }
 
     private Donation createAndSaveDonation(DonationRequest req) {
+        String uniqueContent = "DONATE-" + req.getStreamerId() + "-" + System.currentTimeMillis();
+
         StreamerEntity streamer = streamerRepository.findById(req.getStreamerId()).orElseThrow(
                 () -> new RuntimeException("Streamer not found")
         );
@@ -98,7 +84,8 @@ public class DonationService {
         donation.setMessage(req.getMessage());
         donation.setCreatedAt(LocalDateTime.now());
         donation.setDonorId(req.getDonorId());
-        donation.setStatus("SUCCESS");
+        donation.setContent(uniqueContent);
+        donation.setStatus("PENDING");
 
         return donationRepository.save(donation);
     }
@@ -162,7 +149,6 @@ public class DonationService {
     public List<TopDonorResponse> findTopDonors(String token) {
         List<Object[]> objects = donationRepository.findTopDonors(token, PageRequest.of(0, 10));
 
-        System.out.println("object" + objects);
 
         return objects.stream().map(o -> {
             TopDonorResponse donation = new TopDonorResponse();
@@ -206,14 +192,14 @@ public class DonationService {
     }
 
     public List<Donation> findTop10ByOrderByCreatedAtDesc() {
-        return donationRepository.findTop10ByOrderByCreatedAtDesc();
+        return donationRepository.findTop10ByStatusOrderByCreatedAtDesc("SUCCESS");
     }
 
     public List<DonationResponse> getLatestDonations(Long streamerId, int limit) {
         Pageable pageable = PageRequest.of(0, limit);
 
         List<Donation> donations =
-                donationRepository.findByStreamer_IdOrderByCreatedAtDesc(streamerId, pageable);
+                donationRepository.findByStreamer_IdAndStatusOrderByCreatedAtDesc(streamerId,"SUCCESS", pageable);
 
         return donations.stream().map(d -> {
             DonationResponse res = new DonationResponse();
@@ -223,5 +209,51 @@ public class DonationService {
             res.setMessage(d.getMessage());
             return res;
         }).toList();
+    }
+    private String buildQrUrl(Double amount, String content, String qrTemplate) {
+
+        String qrUrl = qrTemplate
+                + "?amount=" + amount
+                + "&addInfo=" + content;
+
+        return qrUrl;
+    }
+    public PaymentAccountResponse createDonationQR(DonationRequest req, Long streamerId) {
+        Donation donation= createAndSaveDonation(req);
+
+        PaymentAccountEntity paymentAccountEntity = paymentAccountRepository.findByStreamerId(streamerId).orElse(new PaymentAccountEntity());
+
+        PaymentAccountResponse res = new PaymentAccountResponse();
+
+        String qrUrl = buildQrUrl(req.getAmount(),donation.getContent(),paymentAccountEntity.getQrTemplate());
+
+        res.setOrderCode(donation.getId().toString());
+        res.setAmount(req.getAmount());
+        res.setAddInfo(donation.getContent());
+        res.setQrUrl(qrUrl);
+        res.setStatus("PENDING");
+        return res;
+    }
+    public Donation findByContentAndStatus(String content,String status){
+        return donationRepository.findByContentAndStatus(content,status);
+    }
+
+    public DonationResponse updateDonation(Donation donation) {
+        Donation savedDonation = donationRepository.save(donation);
+
+
+        List<TopDonorResponse> topDonorResponses = updateTopDonorRanking(
+            savedDonation.getStreamer().getToken(),
+            savedDonation.getDonorName(),
+            savedDonation.getAmount()
+        );
+
+        DonationResponse response = buildDonationResponse(savedDonation, topDonorResponses);
+
+        sendDonationNotifications(savedDonation);
+
+        redisPublisher.publish(response);
+
+        return response;
     }
 }
