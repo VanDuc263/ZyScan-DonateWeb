@@ -17,4 +17,10 @@ public class WebSocketService {
                 donation
         );
     }
+//    public void sendPaymentSuccess(Long streamerId, PaymentEvent event) {
+//        messagingTemplate.convertAndSend(
+//                "/topic/payment/" + streamerId,
+//                event
+//        );
+//    }
 }

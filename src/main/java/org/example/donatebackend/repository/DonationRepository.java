@@ -15,11 +15,19 @@ public interface DonationRepository extends JpaRepository<Donation,Long> {
     @Query("""
     SELECT d.donorName, SUM(d.amount)
     FROM Donation d
-    WHERE d.streamer.token = :token AND d.donorId IS NOT NULL
+    WHERE d.streamer.token = :token
+      AND d.donorId IS NOT NULL
+      AND d.status = 'SUCCESS'
     GROUP BY d.donorName
     ORDER BY SUM(d.amount) DESC
-""")
+    """)
     List<Object[]> findTopDonors(@Param("token") String token, Pageable pageable);
 
-    List<Donation> findTop10ByOrderByCreatedAtDesc();
-    List<Donation> findByStreamer_IdOrderByCreatedAtDesc(Long streamerId, Pageable pageable);}
+    List<Donation> findTop10ByStatusOrderByCreatedAtDesc(String status);
+    List<Donation> findByStreamer_IdAndStatusOrderByCreatedAtDesc(
+            Long streamerId,
+            String status,
+            Pageable pageable
+    );
+    Donation findByContentAndStatus(String content, String status);
+}
