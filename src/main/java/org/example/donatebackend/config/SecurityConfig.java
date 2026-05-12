@@ -23,6 +23,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/donate/history/received").hasRole("STREAMER")
+                        .requestMatchers("/api/donate/history", "/api/donate/history/sent").authenticated()
                         .requestMatchers("/api/donate/**").permitAll()
                         .requestMatchers("/api/streamers/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()

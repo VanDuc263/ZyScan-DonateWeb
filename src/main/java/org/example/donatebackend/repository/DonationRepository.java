@@ -1,6 +1,5 @@
 package org.example.donatebackend.repository;
 
-import org.example.donatebackend.dto.response.DonationResponse;
 import org.example.donatebackend.entity.Donation;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,9 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
-public interface DonationRepository extends JpaRepository<Donation,Long> {
+public interface DonationRepository extends JpaRepository<Donation, Long> {
 
     @Query("""
     SELECT d.donorName, SUM(d.amount)
@@ -24,10 +22,26 @@ public interface DonationRepository extends JpaRepository<Donation,Long> {
     List<Object[]> findTopDonors(@Param("token") String token, Pageable pageable);
 
     List<Donation> findTop10ByStatusOrderByCreatedAtDesc(String status);
+
     List<Donation> findByStreamer_IdAndStatusOrderByCreatedAtDesc(
             Long streamerId,
             String status,
             Pageable pageable
     );
+
+    // Lịch sử donate của user đang đăng nhập: user đã donate cho ai
+    List<Donation> findByDonorIdAndStatusOrderByCreatedAtDesc(
+            Long donorId,
+            String status,
+            Pageable pageable
+    );
+
+    // Lịch sử donate của streamer đang đăng nhập: streamer đã nhận từ ai
+    List<Donation> findByStreamer_UserIdAndStatusOrderByCreatedAtDesc(
+            Long userId,
+            String status,
+            Pageable pageable
+    );
+
     Donation findByContentAndStatus(String content, String status);
 }
