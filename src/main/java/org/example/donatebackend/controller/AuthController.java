@@ -59,29 +59,7 @@ public class AuthController {
                 ,"user",authResponse);
     }
 
-//    @GetMapping("/me")
-//    public Map<String, Object> me(@RequestHeader("Authorization") String  authHeader) {
-//        String token = authHeader.replace("Bearer ", "");
-//
-//        String username = authService.extractUsername(token);
-//        UserEntity user = authService.getUserByUsername(username);
-//
-//        StreamerEntity streamerEntity = streamerService.findByUserId(user.getId());
-//        StreamerDetailResponse streamerDetailResponse = streamerMapper.toStreamerDetailResponse(streamerEntity);
-//
-//        return Map.of(
-//                "user",
-//                        Map.of(
-//                        "userId", user.getId(),
-//                        "username", user.getUsername(),
-//                        "email", user.getEmail(),
-//                        "role", user.getRole().name(),
-//                        "avatar",user.getAvatar(),
-//                        "fullName",user.getFullName()
-//                        ),
-//                "streamer" ,streamerDetailResponse
-//        );
-//    }
+
 @GetMapping("/me")
 public Map<String, Object> me(@RequestHeader("Authorization") String authHeader) {
     String token = authHeader.replace("Bearer ", "");
