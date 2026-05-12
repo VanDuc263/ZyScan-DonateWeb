@@ -41,7 +41,8 @@ public class DonationService {
     @Autowired
     private NotificationService notificationService;
 
-
+    @Autowired
+    private UserService userService;
 
     private Donation createAndSaveDonation(DonationRequest req) {
         String uniqueContent = "DONATE-" + req.getStreamerId() + "-" + System.currentTimeMillis();
@@ -87,14 +88,37 @@ public class DonationService {
         }).toList();
     }
 
-    private DonationResponse buildDonationResponse(Donation savedDonation, List<TopDonorResponse> topDonors) {
+    private DonationResponse toDonationResponse(Donation donation) {
         DonationResponse response = new DonationResponse();
-        response.setStreamerId(savedDonation.getStreamer().getId());
-        response.setAmount(savedDonation.getAmount());
-        response.setDonorName(savedDonation.getDonorName());
-        response.setMessage(savedDonation.getMessage());
+        response.setId(donation.getId());
+        response.setDonorId(donation.getDonorId());
+        response.setDonorName(donation.getDonorName());
+        response.setAmount(donation.getAmount());
+        response.setMessage(donation.getMessage());
+        response.setStatus(donation.getStatus());
+        response.setCreatedAt(donation.getCreatedAt());
+        response.setContent(donation.getContent());
+        response.setReferenceCode(donation.getReferenceCode());
+
+        if (donation.getStreamer() != null) {
+            response.setStreamerId(donation.getStreamer().getId());
+            response.setStreamerName(donation.getStreamer().getDisplayName());
+            response.setStreamerToken(donation.getStreamer().getToken());
+            response.setStreamerAvatar(donation.getStreamer().getAvatar());
+        }
+
+        return response;
+    }
+
+    private DonationResponse buildDonationResponse(Donation savedDonation, List<TopDonorResponse> topDonors) {
+        DonationResponse response = toDonationResponse(savedDonation);
         response.setTopDonors(topDonors);
         return response;
+    }
+
+    private Pageable safePageable(int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 100));
+        return PageRequest.of(0, safeLimit);
     }
 
     private void sendDonationNotifications(Donation savedDonation) {
@@ -126,13 +150,10 @@ public class DonationService {
     public List<TopDonorResponse> findTopDonors(String token) {
         List<Object[]> objects = donationRepository.findTopDonors(token, PageRequest.of(0, 10));
 
-
         return objects.stream().map(o -> {
             TopDonorResponse donation = new TopDonorResponse();
-
             donation.setDonorName((String) o[0]);
             donation.setTotalAmount((Double) o[1]);
-
             return donation;
         }).toList();
     }
@@ -147,8 +168,6 @@ public class DonationService {
         if (results == null || results.isEmpty()) {
             List<TopDonorResponse> topDonorResponses = findTopDonors(token);
 
-            System.out.println("top donor" + topDonorResponses);
-
             for (TopDonorResponse o : topDonorResponses) {
                 String donorName = o.getDonorName();
                 Double totalAmount = o.getTotalAmount();
@@ -157,7 +176,10 @@ public class DonationService {
             }
 
             results = redisTemplate.opsForZSet().reverseRangeWithScores(key, 0, 9);
-            System.out.println("results: " + results);
+        }
+
+        if (results == null) {
+            return List.of();
         }
 
         return results.stream().map(item -> {
@@ -173,36 +195,82 @@ public class DonationService {
     }
 
     public List<DonationResponse> getLatestDonations(Long streamerId, int limit) {
-        Pageable pageable = PageRequest.of(0, limit);
+        Pageable pageable = safePageable(limit);
 
         List<Donation> donations =
-                donationRepository.findByStreamer_IdAndStatusOrderByCreatedAtDesc(streamerId,"SUCCESS", pageable);
+                donationRepository.findByStreamer_IdAndStatusOrderByCreatedAtDesc(streamerId, "SUCCESS", pageable);
 
-        return donations.stream().map(d -> {
-            DonationResponse res = new DonationResponse();
-            res.setStreamerId(streamerId);
-            res.setAmount(d.getAmount());
-            res.setDonorName(d.getDonorName());
-            res.setMessage(d.getMessage());
-            return res;
-        }).toList();
+        return donations.stream()
+                .map(this::toDonationResponse)
+                .toList();
     }
-    private String buildQrUrl(Double amount, String content, String qrTemplate) {
 
-        String qrUrl = qrTemplate
+    // USER thường: xem lịch sử mình đã donate cho streamer nào
+    public List<DonationResponse> getMySentDonationHistory(String username, int limit) {
+        UserEntity user = userService.findByUsername(username);
+
+        List<Donation> donations =
+                donationRepository.findByDonorIdAndStatusOrderByCreatedAtDesc(
+                        user.getId(),
+                        "SUCCESS",
+                        safePageable(limit)
+                );
+
+        return donations.stream()
+                .map(this::toDonationResponse)
+                .toList();
+    }
+
+    // STREAMER: xem lịch sử donate mình đã nhận
+    public List<DonationResponse> getMyReceivedDonationHistory(String username, int limit) {
+        UserEntity user = userService.findByUsername(username);
+
+        if (user.getRole() != UserEntity.Role.STREAMER) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN,
+                    "Chỉ tài khoản STREAMER mới được xem lịch sử donate đã nhận"
+            );
+        }
+
+        List<Donation> donations =
+                donationRepository.findByStreamer_UserIdAndStatusOrderByCreatedAtDesc(
+                        user.getId(),
+                        "SUCCESS",
+                        safePageable(limit)
+                );
+
+        return donations.stream()
+                .map(this::toDonationResponse)
+                .toList();
+    }
+
+    // Endpoint /api/donate/history dùng chung cho menu Lịch Sử Donate
+    public List<DonationResponse> getMyDonationHistory(String username, int limit) {
+        UserEntity user = userService.findByUsername(username);
+
+        if (user.getRole() == UserEntity.Role.STREAMER) {
+            return getMyReceivedDonationHistory(username, limit);
+        }
+
+        return getMySentDonationHistory(username, limit);
+    }
+
+    private String buildQrUrl(Double amount, String content, String qrTemplate) {
+        return qrTemplate
                 + "?amount=" + amount
                 + "&addInfo=" + content;
-
-        return qrUrl;
     }
-    public PaymentAccountResponse createDonationQR(DonationRequest req, Long streamerId) {
-        Donation donation= createAndSaveDonation(req);
 
-        PaymentAccountEntity paymentAccountEntity = paymentAccountRepository.findByStreamerId(streamerId).orElse(new PaymentAccountEntity());
+    public PaymentAccountResponse createDonationQR(DonationRequest req, Long streamerId) {
+        Donation donation = createAndSaveDonation(req);
+
+        PaymentAccountEntity paymentAccountEntity = paymentAccountRepository
+                .findByStreamerId(streamerId)
+                .orElse(new PaymentAccountEntity());
 
         PaymentAccountResponse res = new PaymentAccountResponse();
 
-        String qrUrl = buildQrUrl(req.getAmount(),donation.getContent(),paymentAccountEntity.getQrTemplate());
+        String qrUrl = buildQrUrl(req.getAmount(), donation.getContent(), paymentAccountEntity.getQrTemplate());
 
         res.setOrderCode(donation.getId().toString());
         res.setAmount(req.getAmount());
@@ -211,18 +279,18 @@ public class DonationService {
         res.setStatus("PENDING");
         return res;
     }
-    public Donation findByContentAndStatus(String content,String status){
-        return donationRepository.findByContentAndStatus(content,status);
+
+    public Donation findByContentAndStatus(String content, String status) {
+        return donationRepository.findByContentAndStatus(content, status);
     }
 
     public DonationResponse updateDonation(Donation donation) {
         Donation savedDonation = donationRepository.save(donation);
 
-
         List<TopDonorResponse> topDonorResponses = updateTopDonorRanking(
-            savedDonation.getStreamer().getToken(),
-            savedDonation.getDonorName(),
-            savedDonation.getAmount()
+                savedDonation.getStreamer().getToken(),
+                savedDonation.getDonorName(),
+                savedDonation.getAmount()
         );
 
         DonationResponse response = buildDonationResponse(savedDonation, topDonorResponses);
