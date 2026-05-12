@@ -1,33 +1,22 @@
-package org.example.donatebackend.entity;
+package org.example.donatebackend.dto.response;
 
-import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "wallets")
-public class WalletEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class WalletResponse {
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "user_id", unique = true, nullable = false)
-    private UserEntity user;
+    private Long userId;
 
-    @Column(nullable = false)
     private BigDecimal balance = BigDecimal.ZERO;
 
-    @Column(name = "frozen_balance")
     private BigDecimal frozenBalance = BigDecimal.ZERO;
 
-    @Column
     private String currency = "VND";
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
+
 
     public Long getId() {
         return id;
@@ -37,12 +26,12 @@ public class WalletEntity {
         this.id = id;
     }
 
-    public UserEntity getUser() {
-        return user;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setUser(UserEntity user) {
-        this.user = user;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public BigDecimal getBalance() {

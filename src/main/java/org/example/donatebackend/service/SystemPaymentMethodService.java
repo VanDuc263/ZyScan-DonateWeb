@@ -19,12 +19,11 @@ public class SystemPaymentMethodService {
         SystemPaymentMethod method = systemPaymentMethodRepository.findById(req.getMethodId())
                 .orElseThrow(() -> new RuntimeException("Method not found"));
 
-        String qrUrl = buildQrUrl(method, req.getAmount(), req.getContent());
+        String qrUrl = buildQrUrl(method, req.getAmount(),"ni");
 
         PaymentQrResponse res = new PaymentQrResponse();
         res.setQrUrl(qrUrl);
         res.setAmount(req.getAmount());
-        res.setContent(req.getContent());
 
         return res;
     }

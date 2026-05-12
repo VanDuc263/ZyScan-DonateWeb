@@ -2,6 +2,7 @@ package org.example.donatebackend.entity;
 
 
 import jakarta.persistence.*;
+import org.example.donatebackend.enums.TransactionStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -38,8 +39,8 @@ public class WalletTransactionEntity {
     @Column(name = "reference_id")
     private Long referenceId;
 
-    @Column(nullable = false)
-    private String status = "SUCCESS";
+    @Enumerated(EnumType.STRING)
+    private TransactionStatus status;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
