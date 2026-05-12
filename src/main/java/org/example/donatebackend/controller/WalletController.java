@@ -27,7 +27,7 @@ public class WalletController {
 
         UserEntity user = userService.findByUsername(username);
 
-        return ResponseEntity.ok(walletService.getWalletByUser(user));
+        return ResponseEntity.ok(walletService.getWalletResponse(user));
 
     }
 }

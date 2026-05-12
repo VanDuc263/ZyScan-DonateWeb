@@ -1,37 +1,119 @@
 package org.example.donatebackend.service;
 
-
 import org.example.donatebackend.dto.request.GenerateQrRequest;
 import org.example.donatebackend.dto.response.PaymentQrResponse;
 import org.example.donatebackend.entity.SystemPaymentMethod;
+import org.example.donatebackend.entity.UserEntity;
 import org.example.donatebackend.repository.SystemPaymentMethodRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.UUID;
 
 @Service
 public class SystemPaymentMethodService {
 
     @Autowired
-    private SystemPaymentMethodRepository systemPaymentMethodRepository;
+    private SystemPaymentMethodRepository repository;
 
-    public PaymentQrResponse generateQr(GenerateQrRequest req) {
+    @Autowired
+    private WalletTransactionService
+            walletTransactionService;
 
-        SystemPaymentMethod method = systemPaymentMethodRepository.findById(req.getMethodId())
-                .orElseThrow(() -> new RuntimeException("Method not found"));
+    public PaymentQrResponse generateQr(
+            GenerateQrRequest req,
+            UserEntity user
+    ) {
 
-        String qrUrl = buildQrUrl(method, req.getAmount(),"ni");
+        SystemPaymentMethod method =
+                repository.findById(req.getMethodId())
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Method not found"
+                                )
+                        );
 
-        PaymentQrResponse res = new PaymentQrResponse();
+        // tiền user muốn nạp
+        BigDecimal amount =
+                BigDecimal.valueOf(
+                        req.getAmount()
+                );
+
+        // phí
+        BigDecimal fee =
+                amount.multiply(
+                        BigDecimal.valueOf(0.01)
+                ).setScale(
+                        0,
+                        RoundingMode.HALF_UP
+                );
+
+        // tổng tiền cần chuyển
+        BigDecimal totalAmount =
+                amount.add(fee);
+
+        String content =
+                "TOPUP-"
+                        + user.getId()
+                        + "-"
+                        + UUID.randomUUID()
+                        .toString()
+                        .replace("-", "")
+                        .substring(0, 8)
+                        .toUpperCase();
+
+        // SAVE TRANSACTION
+        walletTransactionService
+                .createWalletTransaction(
+                        user,
+                        "DEPOSIT",
+                        totalAmount,
+                        fee,
+                        amount,
+                        content
+                );
+
+        String qrUrl = buildQrUrl(
+                method,
+                totalAmount,
+                content
+        );
+
+        PaymentQrResponse res =
+                new PaymentQrResponse();
+
         res.setQrUrl(qrUrl);
-        res.setAmount(req.getAmount());
+
+        // tiền user nhập
+        res.setAmount(
+                amount.doubleValue()
+        );
+
+//        res.setFee(
+//                fee.doubleValue()
+//        );
+//
+//        res.setTotalAmount(
+//                totalAmount.doubleValue()
+//        );
+
+        res.setContent(content);
 
         return res;
     }
 
-    private String buildQrUrl(SystemPaymentMethod method, Double amount, String content) {
+    private String buildQrUrl(
+            SystemPaymentMethod method,
+            BigDecimal amount,
+            String content
+    ) {
+
         return method.getQrImageUrl()
                 + "?amount=" + amount
                 + "&addInfo=" + content
-                + "&account=" + method.getAccountNumber();
+                + "&account=" +
+                method.getAccountNumber();
     }
 }

@@ -3,6 +3,7 @@ package org.example.donatebackend.service;
 import org.example.donatebackend.dto.response.WalletResponse;
 import org.example.donatebackend.entity.UserEntity;
 import org.example.donatebackend.entity.WalletEntity;
+import org.example.donatebackend.mapper.WalletMapper;
 import org.example.donatebackend.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,27 +16,45 @@ public class WalletService {
     @Autowired
     private WalletRepository walletRepository;
 
-    public WalletResponse getWalletByUser(UserEntity userEntity) {
-        WalletEntity wallet = walletRepository.findByUser(userEntity).orElseGet(
-                () -> {
-                    WalletEntity newWallet = new WalletEntity();
-                    newWallet.setUser(userEntity);
-                    newWallet.setBalance(BigDecimal.valueOf(0));
-                    newWallet.setFrozenBalance(BigDecimal.valueOf(0));
-                    newWallet.setCurrency("VND");
-                    walletRepository.save(newWallet);
-                    return newWallet;
-                }
-        );
+    @Autowired
+    private WalletMapper walletMapper;
 
-        WalletResponse walletResponse = new WalletResponse();
-        walletResponse.setId(wallet.getId());
-        walletResponse.setUserId(wallet.getUser().getId());
-        walletResponse.setBalance(wallet.getBalance());
-        walletResponse.setFrozenBalance(wallet.getFrozenBalance());
-        walletResponse.setCurrency(wallet.getCurrency());
-        walletResponse.setCreatedAt(wallet.getCreatedAt());
+    public WalletEntity getOrCreateWallet(
+            UserEntity user
+    ) {
 
-        return walletResponse;
+        return walletRepository.findByUser(user)
+                .orElseGet(() -> {
+
+                    WalletEntity wallet =
+                            new WalletEntity();
+
+                    wallet.setUser(user);
+
+                    wallet.setBalance(BigDecimal.ZERO);
+
+                    wallet.setFrozenBalance(
+                            BigDecimal.ZERO
+                    );
+
+                    wallet.setCurrency("VND");
+
+                    return walletRepository.save(wallet);
+                });
+    }
+
+    public WalletResponse getWalletResponse(
+            UserEntity user
+    ) {
+
+        WalletEntity wallet =
+                getOrCreateWallet(user);
+
+        return walletMapper.toResponse(wallet);
+    }
+
+    public void addBalance(WalletEntity wallet, BigDecimal bigDecimal) {
+        wallet.setBalance(wallet.getBalance().add(bigDecimal));
+        walletRepository.save(wallet);
     }
 }
