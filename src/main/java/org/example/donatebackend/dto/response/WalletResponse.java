@@ -15,7 +15,7 @@ public class WalletResponse {
 
     private String currency = "VND";
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 
 
     public Long getId() {

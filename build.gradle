@@ -42,6 +42,7 @@ dependencies {
 //cloudinary
     implementation 'com.cloudinary:cloudinary-http44:1.37.0'
 
+
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'

@@ -4,6 +4,7 @@ import org.example.donatebackend.dto.request.DonationRequest;
 import org.example.donatebackend.dto.response.DonationResponse;
 import org.example.donatebackend.dto.response.PaymentAccountResponse;
 import org.example.donatebackend.dto.response.TopDonorResponse;
+import org.example.donatebackend.dto.response.WalletResponse;
 import org.example.donatebackend.entity.*;
 import org.example.donatebackend.redis.RedisPublisher;
 import org.example.donatebackend.repository.DonationRepository;
@@ -16,6 +17,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -44,12 +46,19 @@ public class DonationService {
     @Autowired
     private UserService userService;
 
-    private Donation createAndSaveDonation(DonationRequest req) {
-        String uniqueContent = "DONATE-" + req.getStreamerId() + "-" + System.currentTimeMillis();
+    @Autowired
+    private WalletService walletService;
 
-        StreamerEntity streamer = streamerRepository.findById(req.getStreamerId()).orElseThrow(
-                () -> new RuntimeException("Streamer not found")
-        );
+    @Autowired
+    private WalletTransactionService walletTransactionService;
+
+    private String generateUniqueContent(Long streamerId) {
+        return "DONATE-" + streamerId + "-" + System.currentTimeMillis();
+    }
+    private Donation buildDonation(DonationRequest req, String status, String content) {
+
+        StreamerEntity streamer = streamerRepository.findById(req.getStreamerId())
+                .orElseThrow(() -> new RuntimeException("Streamer not found"));
 
         Donation donation = new Donation();
         donation.setStreamer(streamer);
@@ -62,12 +71,14 @@ public class DonationService {
         donation.setMessage(req.getMessage());
         donation.setCreatedAt(LocalDateTime.now());
         donation.setDonorId(req.getDonorId());
-        donation.setContent(uniqueContent);
-        donation.setStatus("PENDING");
+        donation.setContent(content);
+        donation.setStatus(status);
 
+        return donation;
+    }
+    private Donation saveDonation(Donation donation) {
         return donationRepository.save(donation);
     }
-
     private List<TopDonorResponse> updateTopDonorRanking(String token, String donorName, Double amount) {
         String key = "ranking:streamer:" + token;
 
@@ -262,7 +273,9 @@ public class DonationService {
     }
 
     public PaymentAccountResponse createDonationQR(DonationRequest req, Long streamerId) {
-        Donation donation = createAndSaveDonation(req);
+        String content = generateUniqueContent(req.getStreamerId());
+
+        Donation donation = saveDonation(buildDonation(req,"PENDING",content));
 
         PaymentAccountEntity paymentAccountEntity = paymentAccountRepository
                 .findByStreamerId(streamerId)
@@ -300,5 +313,39 @@ public class DonationService {
         redisPublisher.publish(response);
 
         return response;
+    }
+    public DonationResponse createDonationByWallet(DonationRequest req){
+        UserEntity user = userService.findByUserId(req.getDonorId());
+
+
+        WalletEntity wallet =
+                walletService.getOrCreateWallet(user);
+
+        BigDecimal balanceBefore = wallet.getBalance();
+
+
+        walletService.decreaseBalance(wallet, BigDecimal.valueOf(req.getAmount()));
+
+
+        WalletResponse walletResponse = new WalletResponse();
+        walletResponse.setId(wallet.getId());
+        walletResponse.setBalance(wallet.getBalance());
+        walletResponse.setFrozenBalance(wallet.getFrozenBalance());
+        walletResponse.setCurrency(wallet.getCurrency());
+        walletResponse.setCreatedAt(wallet.getCreatedAt());
+        walletResponse.setUserId(user.getId());
+
+
+        BigDecimal balanceAfter =
+                wallet.getBalance();
+        walletTransactionService.createDonationOutTransaction(wallet, BigDecimal.valueOf(req.getAmount()), balanceBefore, balanceAfter,
+                "DONATE_WALLET_" + System.currentTimeMillis()
+        );
+
+
+        Donation donation = buildDonation(req, "SUCCESS", null);
+        DonationResponse donationResponse = updateDonation(donation);
+        donationResponse.setWalletResponse(walletResponse);
+        return donationResponse;
     }
 }

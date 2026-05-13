@@ -57,4 +57,12 @@ public class WalletService {
         wallet.setBalance(wallet.getBalance().add(bigDecimal));
         walletRepository.save(wallet);
     }
+    public WalletEntity decreaseBalance(WalletEntity wallet, BigDecimal amount) {
+        if (wallet.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Insufficient balance");
+        }
+
+        wallet.setBalance(wallet.getBalance().subtract(amount));
+        return walletRepository.save(wallet);
+    }
 }

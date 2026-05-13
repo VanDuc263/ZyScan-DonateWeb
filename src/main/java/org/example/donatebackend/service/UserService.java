@@ -54,6 +54,11 @@ public class UserService {
                 () -> new AppException(ErrorCode.USER_NOT_FOUND,"user not found")
         );
     }
+    public UserEntity findByUserId(Long userId) {
+        return userRepository.findById(userId).orElseThrow(
+                () -> new AppException(ErrorCode.USER_NOT_FOUND,"user not found")
+        );
+    }
     public UserEntity updateProfile(String username, UpdateProfileRequest request) {
         UserEntity user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("user not found"));
