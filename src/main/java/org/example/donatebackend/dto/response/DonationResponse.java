@@ -21,6 +21,7 @@ public class DonationResponse {
     private String referenceCode;
 
     private List<TopDonorResponse> topDonors;
+    private WalletResponse walletResponse;
 
     public Long getId() {
         return id;
@@ -132,5 +133,13 @@ public class DonationResponse {
 
     public void setTopDonors(List<TopDonorResponse> topDonors) {
         this.topDonors = topDonors;
+    }
+
+    public WalletResponse getWalletResponse() {
+        return walletResponse;
+    }
+
+    public void setWalletResponse(WalletResponse walletResponse) {
+        this.walletResponse = walletResponse;
     }
 }

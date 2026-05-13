@@ -4,7 +4,6 @@ import org.example.donatebackend.dto.response.DonationResponse;
 import org.example.donatebackend.service.WebSocketService;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -12,25 +11,26 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class RedisSubscriber implements MessageListener {
 
     private final WebSocketService webSocketService;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
-    public RedisSubscriber(WebSocketService webSocketService, RedisTemplate<String, Object> redisTemplate) {
+    public RedisSubscriber(WebSocketService webSocketService,
+                           ObjectMapper objectMapper) {
         this.webSocketService = webSocketService;
-        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
     }
 
     @Override
     public void onMessage(Message message, byte[] pattern) {
         try {
-            Object obj = redisTemplate.getValueSerializer().deserialize(message.getBody());
+            String json = new String(message.getBody());
 
-            DonationResponse donation = (DonationResponse) obj;
+            DonationResponse donation =
+                    objectMapper.readValue(json, DonationResponse.class);
 
             webSocketService.sendDonateAlert(
                     donation.getStreamerId(),
                     donation
             );
-
 
         } catch (Exception e) {
             e.printStackTrace();

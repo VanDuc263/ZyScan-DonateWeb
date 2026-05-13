@@ -65,7 +65,40 @@ public class WalletTransactionService {
 
         return walletTransactionRepository.save(tx);
     }
+    public WalletTransactionEntity createDonationOutTransaction(
+            WalletEntity wallet,
+            BigDecimal amount,
+            BigDecimal balanceBefore,
+            BigDecimal balanceAfter,
+            String transactionCode
+    ) {
 
+        WalletTransactionEntity tx =
+                new WalletTransactionEntity();
+
+        tx.setWallet(wallet);
+
+        tx.setType("DONATION_OUT");
+
+        // số tiền donate
+        tx.setAmount(amount);
+
+        // donate ví thường không fee
+        tx.setFee(BigDecimal.ZERO);
+
+        // số tiền thực bị trừ
+        tx.setNetAmount(amount);
+
+        tx.setTransactionCode(transactionCode);
+
+        tx.setBalanceBefore(balanceBefore);
+
+        tx.setBalanceAfter(balanceAfter);
+
+        tx.setStatus(TransactionStatus.SUCCESS);
+
+        return walletTransactionRepository.save(tx);
+    }
     public WalletTransactionEntity
     findByTransactionCodeAndStatus(
             String transactionCode,

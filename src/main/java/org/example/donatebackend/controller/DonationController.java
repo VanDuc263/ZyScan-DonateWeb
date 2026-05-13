@@ -33,9 +33,10 @@ public class DonationController {
         );
     }
 
-    // Dùng chung cho trang /account/donations:
-    // - USER: trả về lịch sử đã donate
-    // - STREAMER: trả về lịch sử đã nhận donate
+    @PostMapping("/wallet")
+    public ResponseEntity<?> createDonationWallet(Authentication authentication, @RequestBody DonationRequest req) {
+        return ResponseEntity.ok(donationService.createDonationByWallet(req));
+    }
     @GetMapping("/history")
     public List<DonationResponse> getMyDonationHistory(
             Authentication authentication,
