@@ -10,6 +10,7 @@ import org.example.donatebackend.service.UserService;
 import org.example.donatebackend.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -77,8 +78,19 @@ public class StreamerController {
 
 
     @GetMapping("/{token}")
-    public StreamerDetailResponse getByToken(@PathVariable String token) {
-        return streamerService.getByDonateToken(token);
+    public StreamerDetailResponse getByToken(@PathVariable String token, Authentication authentication) {
+        UserEntity userEntity = null;
+        if(            authentication != null &&
+                authentication.isAuthenticated() &&
+                !"anonymousUser".equals(authentication.getName())
+        ) {
+
+            String username = authentication.getName();
+
+            userEntity =
+                    userService.findByUsername(username);
+        }
+        return streamerService.getByDonateToken(token,userEntity);
     }
 
     @GetMapping("/top")

@@ -9,6 +9,7 @@ public class StreamerDetailResponse {
     private String bio;
     private int followers;
     private String qrUrl;
+    private boolean following;
 
 
     public Long getStreamerId() {
@@ -74,5 +75,13 @@ public class StreamerDetailResponse {
 
     public void setQrUrl(String qrUrl) {
         this.qrUrl = qrUrl;
+    }
+
+    public boolean isFollowing() {
+        return following;
+    }
+
+    public void setFollowing(boolean following) {
+        this.following = following;
     }
 }

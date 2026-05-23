@@ -39,6 +39,9 @@ public class StreamerService {
     @Autowired
     private PaymentAccountService paymentAccountService;
 
+    @Autowired
+    private FollowerService followerService;
+
 
     public StreamerEntity createStreamer(StreamerRequest request){
         String username = Objects.requireNonNull(SecurityContextHolder.getContext()
@@ -79,7 +82,7 @@ public class StreamerService {
         return streamer;
     }
 
-    public StreamerDetailResponse getByDonateToken(String donateToken){
+    public StreamerDetailResponse getByDonateToken(String donateToken,UserEntity user){
         StreamerEntity streamer =  streamerRepository.findByToken(donateToken);
 
         if(streamer == null){
@@ -95,6 +98,11 @@ public class StreamerService {
         streamerDetailReponse.setFollowers(streamer.getFollowers());
         streamerDetailReponse.setToken(streamer.getToken());
 
+
+        if(user != null){
+            boolean following = followerService.isFollowing(user.getId(),streamer.getId());
+            streamerDetailReponse.setFollowing(following);
+        }
 
         String qrUrl = paymentAccountService.getQrUrlByStreamerId(streamer.getId());
         streamerDetailReponse.setQrUrl(qrUrl);
@@ -181,6 +189,14 @@ public class StreamerService {
             throw new RuntimeException("Streamer not found");
         }
         return streamer.getId();
+    }
+    public StreamerEntity getStreamerIdByToken(String token) {
+        StreamerEntity streamer = streamerRepository.findByToken(token);
+
+        if (streamer == null) {
+            throw new RuntimeException("Streamer not found");
+        }
+        return streamer;
     }
 }
 
