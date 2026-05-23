@@ -13,6 +13,7 @@ import org.example.donatebackend.service.StreamerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -90,32 +91,41 @@ public Map<String, Object> me(@RequestHeader("Authorization") String authHeader)
 }
 
     @PostMapping("/google")
-    public Map<String, Object> google(@RequestBody Map<String,String> req) {
-        try {
-            String idToken = req.get("credential");
-            var payload = googleTokenVerifier.verify(idToken);
+    public Map<String, Object> google(
+            @RequestBody Map<String, String> req
+    ) throws Exception {
 
+        String idToken = req.get("credential");
 
-            String email = payload.getEmail();
-            String name = (String) payload.get("name");
+        var payload = googleTokenVerifier.verify(idToken);
 
-            AuthResponse authResponse = authService.findOrCreateGoogleUser(name,email);
+        String email = payload.getEmail();
+        String name = (String) payload.get("name");
 
-            StreamerEntity streamer = streamerService.findByUserId(authResponse.getUserResponse().getId());
-            StreamerDetailResponse streamerDetailResponse = streamerMapper.toStreamerDetailResponse(streamer);
-            authResponse.setStreamerDetailReponse(streamerDetailResponse);
+        AuthResponse authResponse =
+                authService.findOrCreateGoogleUser(name, email);
 
-            return Map.of(
-                    "token", authResponse.getToken(),
-                    "user",authResponse.getUserResponse(),
-                    "streamer",authResponse.getStreamerDetailReponse()
-            );
+        StreamerEntity streamer =
+                streamerService.findByUserId(
+                        authResponse.getUserResponse().getId()
+                );
 
+        Map<String, Object> response = new HashMap<>();
 
-        }catch (Exception e){
-            return Map.of("error", "Invalid Google token");
+        response.put("token", authResponse.getToken());
 
+        response.put("user", authResponse.getUserResponse());
+
+        if (streamer != null) {
+
+            StreamerDetailResponse streamerDetailResponse =
+                    streamerMapper.toStreamerDetailResponse(streamer);
+
+            response.put("streamer", streamerDetailResponse);
         }
 
+        return response;
     }
+
+
 }

@@ -36,6 +36,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/payments/*/sandbox-simulate").permitAll()
                         .requestMatchers("/api/payments/vietqr/callback").permitAll()
                         .requestMatchers("/vqr/**").permitAll()
+                        .requestMatchers("/api/tts/**").permitAll()
 
                         .requestMatchers("/api/user/**").hasAnyRole("USER", "STREAMER", "ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
