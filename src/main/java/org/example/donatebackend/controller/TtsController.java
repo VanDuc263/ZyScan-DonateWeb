@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @RestController
@@ -25,11 +26,14 @@ public class TtsController {
 
         RestTemplate restTemplate = new RestTemplate();
 
+        System.out.println(body.get("text"));
+
         HttpHeaders headers = new HttpHeaders();
+
         headers.set("api_key", fptTtsProperties.getKey());
         headers.set("voice", fptTtsProperties.getVoice());
         headers.set("speed", "0");
-        headers.setContentType(MediaType.TEXT_PLAIN);
+        headers.setContentType(new MediaType("text", "plain", StandardCharsets.UTF_8));
 
         HttpEntity<String> request = new HttpEntity<>(text, headers);
 

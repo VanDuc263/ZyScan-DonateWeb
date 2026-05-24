@@ -1,6 +1,9 @@
 package org.example.donatebackend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.donatebackend.dto.request.SocialLinkRequest;
 import org.example.donatebackend.dto.request.StreamerRequest;
+import org.example.donatebackend.dto.request.UpdateStreamerBioRequest;
 import org.example.donatebackend.dto.response.*;
 import org.example.donatebackend.entity.StreamerEntity;
 import org.example.donatebackend.entity.UserEntity;
@@ -9,12 +12,14 @@ import org.example.donatebackend.service.StreamerService;
 import org.example.donatebackend.service.UserService;
 import org.example.donatebackend.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -98,4 +103,57 @@ public class StreamerController {
         return streamerService.getTop10Streamer();
     }
 
+
+    @GetMapping("/me/bio")
+    public ResponseEntity<StreamerProfileResponse> getBio(Authentication authentication) {
+        String username =  authentication.getName();
+        Long streamerId = streamerService.getStreamerId(username);
+
+        return ResponseEntity.ok(streamerService.getBio(streamerId));
+    }
+    @PutMapping(value = "/me/bio", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<StreamerProfileResponse> updateBio(
+            Authentication authentication,
+
+            @RequestPart("displayName") String displayName,
+            @RequestPart("bio") String bio,
+
+            @RequestPart(value = "avatar", required = false)
+            MultipartFile avatar,
+
+            @RequestPart(value = "thumb", required = false)
+            MultipartFile thumb,
+
+            @RequestPart("socialLinks") String socialLinksJson
+    ) throws Exception {
+
+        String username = authentication.getName();
+        Long streamerId = streamerService.getStreamerId(username);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        List<SocialLinkRequest> socialLinks =
+                Arrays.asList(
+                        objectMapper.readValue(
+                                socialLinksJson,
+                                SocialLinkRequest[].class
+                        )
+                );
+
+        UpdateStreamerBioRequest request =
+                new UpdateStreamerBioRequest();
+
+        request.setDisplayName(displayName);
+        request.setBio(bio);
+        request.setSocialLinks(socialLinks);
+
+        return ResponseEntity.ok(
+                streamerService.updateBio(
+                        streamerId,
+                        request,
+                        avatar,
+                        thumb
+                )
+        );
+    }
 }
