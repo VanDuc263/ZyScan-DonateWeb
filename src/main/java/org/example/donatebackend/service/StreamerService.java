@@ -1,15 +1,18 @@
 package org.example.donatebackend.service;
 
+import jakarta.transaction.Transactional;
+import org.example.donatebackend.dto.request.SocialLinkRequest;
 import org.example.donatebackend.dto.request.StreamerRequest;
-import org.example.donatebackend.dto.response.SearchStreamerResponse;
-import org.example.donatebackend.dto.response.StreamerDetailResponse;
-import org.example.donatebackend.dto.response.TopStreamerResponse;
+import org.example.donatebackend.dto.request.UpdateStreamerBioRequest;
+import org.example.donatebackend.dto.response.*;
 import org.example.donatebackend.entity.NotificationEntity;
 import org.example.donatebackend.entity.StreamerEntity;
+import org.example.donatebackend.entity.StreamerSocialLinkEntity;
 import org.example.donatebackend.entity.UserEntity;
 import org.example.donatebackend.exception.AppException;
 import org.example.donatebackend.exception.ErrorCode;
 import org.example.donatebackend.repository.StreamerRepository;
+import org.example.donatebackend.repository.StreamerSocialLinkRepository;
 import org.example.donatebackend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -41,6 +44,9 @@ public class StreamerService {
 
     @Autowired
     private FollowerService followerService;
+
+    @Autowired
+    private StreamerSocialLinkRepository  streamerSocialLinkRepository;
 
 
     public StreamerEntity createStreamer(StreamerRequest request){
@@ -106,6 +112,20 @@ public class StreamerService {
 
         String qrUrl = paymentAccountService.getQrUrlByStreamerId(streamer.getId());
         streamerDetailReponse.setQrUrl(qrUrl);
+
+        List<StreamerSocialLinkEntity> streamerSocialLinkEntities = streamerSocialLinkRepository.findByStreamerId(streamer.getId());
+
+        List<StreamerSocialLinkResponse>  streamerSocialLinkResponses = streamerSocialLinkEntities.stream().map(
+                streamerSocialLinkEntity -> {
+                    StreamerSocialLinkResponse dto = new StreamerSocialLinkResponse();
+                    dto.setPlatform(streamerSocialLinkEntity.getPlatform().toString());
+                    dto.setUrl(streamerSocialLinkEntity.getUrl());
+                    dto.setVisible(streamerSocialLinkEntity.getVisible());
+                    return dto;
+                }
+        ).toList();
+
+        streamerDetailReponse.setSocialLinks(streamerSocialLinkResponses);
 
         return streamerDetailReponse;
     }
@@ -197,6 +217,94 @@ public class StreamerService {
             throw new RuntimeException("Streamer not found");
         }
         return streamer;
+    }
+
+    public StreamerProfileResponse getBio(Long streamerId) {
+        String qrUrl = paymentAccountService.getQrUrlByStreamerId(streamerId);
+
+        StreamerEntity streamer = streamerRepository.findById(streamerId).orElse(new StreamerEntity());
+
+        StreamerProfileResponse streamerProfileResponse = new StreamerProfileResponse();
+        streamerProfileResponse.setStreamerId(streamer.getId());
+        streamerProfileResponse.setDisplayName(streamer.getDisplayName());
+        streamerProfileResponse.setToken(streamer.getToken());
+        streamerProfileResponse.setAvatar(streamer.getAvatar());
+        streamerProfileResponse.setThumb(streamer.getThumb());
+        streamerProfileResponse.setFollowers(streamer.getFollowers());
+        streamerProfileResponse.setQrUrl(qrUrl);
+        streamerProfileResponse.setBio(streamer.getBio());
+
+
+        List<StreamerSocialLinkEntity> streamerSocialLinkEntities = streamerSocialLinkRepository.findByStreamerId(streamerId);
+
+        List<StreamerSocialLinkResponse>  streamerSocialLinkResponses = streamerSocialLinkEntities.stream().map(
+                streamerSocialLinkEntity -> {
+                    StreamerSocialLinkResponse dto = new StreamerSocialLinkResponse();
+                    dto.setPlatform(streamerSocialLinkEntity.getPlatform().toString());
+                    dto.setUrl(streamerSocialLinkEntity.getUrl());
+                    dto.setVisible(streamerSocialLinkEntity.getVisible());
+                    return dto;
+                }
+        ).toList();
+
+        streamerProfileResponse.setSocialLinks(streamerSocialLinkResponses);
+
+        return streamerProfileResponse;
+    }
+
+    @Transactional
+    public StreamerProfileResponse updateBio(
+            Long streamerId,
+            UpdateStreamerBioRequest request,
+            MultipartFile avatar,
+            MultipartFile thumb
+    ) {
+
+        StreamerEntity streamer = streamerRepository.findById(streamerId)
+                .orElseThrow(() -> new RuntimeException("Streamer not found"));
+
+        streamer.setDisplayName(request.getDisplayName());
+        streamer.setBio(request.getBio());
+
+        if (avatar != null && !avatar.isEmpty()) {
+            String avatarUrl =
+                    fileUploadService.upload("STREAMER", avatar);
+
+            streamer.setAvatar(avatarUrl);
+        }
+
+        if (thumb != null && !thumb.isEmpty()) {
+            String thumbUrl =
+                    fileUploadService.upload("THUMB", thumb);
+
+            streamer.setThumb(thumbUrl);
+        }
+
+        streamerRepository.save(streamer);
+
+        streamerSocialLinkRepository.deleteByStreamerId(streamerId);
+
+        if (request.getSocialLinks() != null) {
+            for (SocialLinkRequest link : request.getSocialLinks()) {
+
+                if (link.getUrl() == null ||
+                        link.getUrl().trim().isEmpty()) {
+                    continue;
+                }
+
+                StreamerSocialLinkEntity entity =
+                        new StreamerSocialLinkEntity();
+
+                entity.setStreamerId(streamerId);
+                entity.setPlatform(link.getPlatform());
+                entity.setUrl(link.getUrl());
+                entity.setVisible(link.getVisible());
+
+                streamerSocialLinkRepository.save(entity);
+            }
+        }
+
+        return getBio(streamerId);
     }
 }
 

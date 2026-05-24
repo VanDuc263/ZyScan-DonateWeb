@@ -2,18 +2,16 @@ package org.example.donatebackend.dto.response;
 
 import java.util.List;
 
-public class StreamerDetailResponse {
+public class StreamerProfileResponse {
     private Long streamerId;
-    private String token;
     private String displayName;
     private String avatar;
     private String thumb;
     private String bio;
+    private String token;
     private int followers;
     private String qrUrl;
-    private boolean following;
     private List<StreamerSocialLinkResponse> socialLinks;
-
 
     public Long getStreamerId() {
         return streamerId;
@@ -23,14 +21,6 @@ public class StreamerDetailResponse {
         this.streamerId = streamerId;
     }
 
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
-
     public String getDisplayName() {
         return displayName;
     }
@@ -38,7 +28,6 @@ public class StreamerDetailResponse {
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
     }
-
 
     public String getAvatar() {
         return avatar;
@@ -64,6 +53,14 @@ public class StreamerDetailResponse {
         this.bio = bio;
     }
 
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
     public int getFollowers() {
         return followers;
     }
@@ -78,14 +75,6 @@ public class StreamerDetailResponse {
 
     public void setQrUrl(String qrUrl) {
         this.qrUrl = qrUrl;
-    }
-
-    public boolean isFollowing() {
-        return following;
-    }
-
-    public void setFollowing(boolean following) {
-        this.following = following;
     }
 
     public List<StreamerSocialLinkResponse> getSocialLinks() {
