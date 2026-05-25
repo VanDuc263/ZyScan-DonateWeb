@@ -1,6 +1,7 @@
 package org.example.donatebackend.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name="users")
@@ -16,11 +17,13 @@ public class UserEntity {
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private long id;
 
-    @Column(unique = true,nullable = false)
+    @Column(unique = true, nullable = false)
     private String username;
-    @Column(unique = true,nullable = false)
+
+    @Column(nullable = false)
     private String password;
-    @Column(unique = true,nullable = false)
+
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Column(name = "full_name")
@@ -31,6 +34,9 @@ public class UserEntity {
     private Role role;
 
     private String avatar;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     public long getId() {
         return id;
@@ -60,7 +66,7 @@ public class UserEntity {
         this.fullName = fullName;
     }
 
-    public String getFullName() {   
+    public String getFullName() {
         return fullName;
     }
 
@@ -86,5 +92,13 @@ public class UserEntity {
 
     public void setAvatar(String avatar) {
         this.avatar = avatar;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

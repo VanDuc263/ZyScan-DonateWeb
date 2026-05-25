@@ -27,6 +27,7 @@ public class StreamerEntity {
     private String token;
 
     private String avatar;
+    @Column(name = "thumb", columnDefinition = "TEXT")
     private String thumb;
     private String bio;
     @Column(name="followers_count")

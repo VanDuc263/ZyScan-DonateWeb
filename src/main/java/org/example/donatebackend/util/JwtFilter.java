@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -21,35 +20,63 @@ public class JwtFilter extends OncePerRequestFilter {
     @Autowired
     private JwtUtil jwtUtil;
 
-
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
         String path = request.getRequestURI();
-        if (path.startsWith("/api/auth")) { // Bỏ qua auth endpoints
+
+        if (path.startsWith("/api/auth")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         String header = request.getHeader("Authorization");
 
+        System.out.println("JWT FILTER PATH = " + path);
+        System.out.println("AUTH HEADER = " + header);
+
         if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
+            String token = header.substring(7).trim();
 
-            if (jwtUtil.isTokenValid(token)) {
-                String username = jwtUtil.extractUsername(token);
-                String role = jwtUtil.extractRole(token);
+            try {
+                if (jwtUtil.isTokenValid(token)) {
+                    String username = jwtUtil.extractUsername(token);
+                    String role = jwtUtil.extractRole(token);
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                username,
-                                null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                        );
+                    if (role == null || role.isBlank()) {
+                        System.out.println("JWT ROLE IS EMPTY");
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    role = role.trim();
+
+                    String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+
+                    System.out.println("JWT OK USERNAME = " + username);
+                    System.out.println("JWT ROLE = " + role);
+                    System.out.println("JWT AUTHORITY = " + authority);
+
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    username,
+                                    null,
+                                    List.of(new SimpleGrantedAuthority(authority))
+                            );
+
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } else {
+                    System.out.println("JWT INVALID");
+                }
+            } catch (Exception e) {
+                System.out.println("JWT FILTER ERROR = " + e.getMessage());
             }
+        } else {
+            System.out.println("NO BEARER TOKEN");
         }
 
         filterChain.doFilter(request, response);

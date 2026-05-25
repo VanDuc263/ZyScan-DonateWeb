@@ -56,39 +56,40 @@ public class AuthController {
         );
 
         return Map.of(
-                "token",authResponse.getToken()
-                ,"user",authResponse);
+                "token", authResponse.getToken(),
+                "user", authResponse.getUserResponse()
+        );
     }
 
 
-@GetMapping("/me")
-public Map<String, Object> me(@RequestHeader("Authorization") String authHeader) {
-    String token = authHeader.replace("Bearer ", "");
+    @GetMapping("/me")
+    public Map<String, Object> me(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
 
-    String username = authService.extractUsername(token);
-    UserEntity user = authService.getUserByUsername(username);
+        String username = authService.extractUsername(token);
+        UserEntity user = authService.getUserByUsername(username);
 
-    StreamerEntity streamerEntity = streamerService.findByUserId(user.getId());
-    StreamerDetailResponse streamerDetailResponse = null;
+        StreamerEntity streamerEntity = streamerService.findByUserId(user.getId());
+        StreamerDetailResponse streamerDetailResponse = null;
 
-    if (streamerEntity != null) {
-        streamerDetailResponse = streamerMapper.toStreamerDetailResponse(streamerEntity);
+        if (streamerEntity != null) {
+            streamerDetailResponse = streamerMapper.toStreamerDetailResponse(streamerEntity);
+        }
+
+        Map<String, Object> userMap = new java.util.HashMap<>();
+        userMap.put("userId", user.getId());
+        userMap.put("username", user.getUsername());
+        userMap.put("email", user.getEmail());
+        userMap.put("role", user.getRole() != null ? user.getRole().name() : null);
+        userMap.put("avatar", user.getAvatar());
+        userMap.put("fullName", user.getFullName());
+
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("user", userMap);
+        result.put("streamer", streamerDetailResponse);
+
+        return result;
     }
-
-    Map<String, Object> userMap = new java.util.HashMap<>();
-    userMap.put("userId", user.getId());
-    userMap.put("username", user.getUsername());
-    userMap.put("email", user.getEmail());
-    userMap.put("role", user.getRole() != null ? user.getRole().name() : null);
-    userMap.put("avatar", user.getAvatar());
-    userMap.put("fullName", user.getFullName());
-
-    Map<String, Object> result = new java.util.HashMap<>();
-    result.put("user", userMap);
-    result.put("streamer", streamerDetailResponse);
-
-    return result;
-}
 
     @PostMapping("/google")
     public Map<String, Object> google(
