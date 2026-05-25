@@ -29,14 +29,12 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
             Pageable pageable
     );
 
-    // Lịch sử donate của user đang đăng nhập: user đã donate cho ai
     List<Donation> findByDonorIdAndStatusOrderByCreatedAtDesc(
             Long donorId,
             String status,
             Pageable pageable
     );
 
-    // Lịch sử donate của streamer đang đăng nhập: streamer đã nhận từ ai
     List<Donation> findByStreamer_UserIdAndStatusOrderByCreatedAtDesc(
             Long userId,
             String status,
@@ -44,4 +42,16 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
     );
 
     Donation findByContentAndStatus(String content, String status);
+
+    List<Donation> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    long countByStatus(String status);
+
+    long countByStreamer_IdAndStatus(Long streamerId, String status);
+
+    @Query("SELECT COALESCE(SUM(d.amount), 0) FROM Donation d WHERE d.status = :status")
+    Double sumAmountByStatus(@Param("status") String status);
+
+    @Query("SELECT COALESCE(SUM(d.amount), 0) FROM Donation d WHERE d.streamer.id = :streamerId AND d.status = 'SUCCESS'")
+    Double sumSuccessAmountByStreamerId(@Param("streamerId") Long streamerId);
 }

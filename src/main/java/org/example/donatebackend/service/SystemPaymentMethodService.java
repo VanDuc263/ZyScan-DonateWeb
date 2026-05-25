@@ -1,15 +1,19 @@
 package org.example.donatebackend.service;
 
 import org.example.donatebackend.dto.request.GenerateQrRequest;
+import org.example.donatebackend.dto.request.PaymentMethodRequest;
+import org.example.donatebackend.dto.response.AdminPaymentMethodResponse;
 import org.example.donatebackend.dto.response.PaymentQrResponse;
 import org.example.donatebackend.entity.SystemPaymentMethod;
 import org.example.donatebackend.entity.UserEntity;
 import org.example.donatebackend.repository.SystemPaymentMethodRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -19,101 +23,91 @@ public class SystemPaymentMethodService {
     private SystemPaymentMethodRepository repository;
 
     @Autowired
-    private WalletTransactionService
-            walletTransactionService;
+    private WalletTransactionService walletTransactionService;
 
-    public PaymentQrResponse generateQr(
-            GenerateQrRequest req,
-            UserEntity user
-    ) {
+    @Autowired
+    private AdminMapperService adminMapperService;
 
-        SystemPaymentMethod method =
-                repository.findById(req.getMethodId())
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Method not found"
-                                )
-                        );
+    public PaymentQrResponse generateQr(GenerateQrRequest req, UserEntity user) {
+        SystemPaymentMethod method = repository.findById(req.getMethodId())
+                .orElseThrow(() -> new RuntimeException("Method not found"));
 
-        // tiền user muốn nạp
-        BigDecimal amount =
-                BigDecimal.valueOf(
-                        req.getAmount()
-                );
+        BigDecimal amount = BigDecimal.valueOf(req.getAmount());
+        BigDecimal fee = amount.multiply(BigDecimal.valueOf(0.01)).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal totalAmount = amount.add(fee);
 
-        // phí
-        BigDecimal fee =
-                amount.multiply(
-                        BigDecimal.valueOf(0.01)
-                ).setScale(
-                        0,
-                        RoundingMode.HALF_UP
-                );
+        String content = "TOPUP-" + user.getId() + "-" + UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 8)
+                .toUpperCase();
 
-        // tổng tiền cần chuyển
-        BigDecimal totalAmount =
-                amount.add(fee);
+        walletTransactionService.createWalletTransaction(user, "DEPOSIT", totalAmount, fee, amount, content);
 
-        String content =
-                "TOPUP-"
-                        + user.getId()
-                        + "-"
-                        + UUID.randomUUID()
-                        .toString()
-                        .replace("-", "")
-                        .substring(0, 8)
-                        .toUpperCase();
+        String qrUrl = buildQrUrl(method, totalAmount, content);
 
-        // SAVE TRANSACTION
-        walletTransactionService
-                .createWalletTransaction(
-                        user,
-                        "DEPOSIT",
-                        totalAmount,
-                        fee,
-                        amount,
-                        content
-                );
-
-        String qrUrl = buildQrUrl(
-                method,
-                totalAmount,
-                content
-        );
-
-        PaymentQrResponse res =
-                new PaymentQrResponse();
-
+        PaymentQrResponse res = new PaymentQrResponse();
         res.setQrUrl(qrUrl);
-
-        // tiền user nhập
-        res.setAmount(
-                amount.doubleValue()
-        );
-
-//        res.setFee(
-//                fee.doubleValue()
-//        );
-//
-//        res.setTotalAmount(
-//                totalAmount.doubleValue()
-//        );
-
+        res.setAmount(amount.doubleValue());
         res.setContent(content);
-
         return res;
     }
 
-    private String buildQrUrl(
-            SystemPaymentMethod method,
-            BigDecimal amount,
-            String content
-    ) {
+    @Transactional(readOnly = true)
+    public List<AdminPaymentMethodResponse> adminFindAll() {
+        return repository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(adminMapperService::toPaymentMethodResponse)
+                .toList();
+    }
 
+    @Transactional
+    public AdminPaymentMethodResponse adminCreate(PaymentMethodRequest req) {
+        SystemPaymentMethod method = new SystemPaymentMethod();
+        applyRequest(method, req, true);
+        return adminMapperService.toPaymentMethodResponse(repository.save(method));
+    }
+
+    @Transactional
+    public AdminPaymentMethodResponse adminUpdate(Long id, PaymentMethodRequest req) {
+        SystemPaymentMethod method = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Payment method not found"));
+        applyRequest(method, req, false);
+        return adminMapperService.toPaymentMethodResponse(repository.save(method));
+    }
+
+    @Transactional
+    public void adminDelete(Long id) {
+        if (!repository.existsById(id)) {
+            throw new RuntimeException("Payment method not found");
+        }
+        repository.deleteById(id);
+    }
+
+    private void applyRequest(SystemPaymentMethod method, PaymentMethodRequest req, boolean creating) {
+        if (creating && (req.getProviderType() == null || req.getProviderType().trim().isEmpty())) {
+            throw new RuntimeException("providerType is required");
+        }
+        if (req.getProviderType() != null) method.setProviderType(trimOrNull(req.getProviderType()));
+        if (req.getBankCode() != null) method.setBankCode(trimOrNull(req.getBankCode()));
+        if (req.getAccountNumber() != null) method.setAccountNumber(trimOrNull(req.getAccountNumber()));
+        if (req.getAccountName() != null) method.setAccountName(trimOrNull(req.getAccountName()));
+        if (req.getQrTemplate() != null) method.setQrTemplate(trimOrNull(req.getQrTemplate()));
+        if (req.getQrImageUrl() != null) method.setQrImageUrl(trimOrNull(req.getQrImageUrl()));
+        if (req.getActive() != null) method.setActive(req.getActive());
+        if (method.getActive() == null) method.setActive(true);
+    }
+
+    private String trimOrNull(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String buildQrUrl(SystemPaymentMethod method, BigDecimal amount, String content) {
         return method.getQrImageUrl()
                 + "?amount=" + amount
                 + "&addInfo=" + content
-                + "&account=" +
-                method.getAccountNumber();
+                + "&account=" + method.getAccountNumber();
     }
 }

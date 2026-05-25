@@ -16,4 +16,6 @@ public interface UserRepository extends JpaRepository<UserEntity,Long> {
     boolean existsByEmail(String email);
 
     Optional<UserEntity> findByUsernameOrEmail(String username, String email);
+
+    long countByRole(UserEntity.Role role);
 }
