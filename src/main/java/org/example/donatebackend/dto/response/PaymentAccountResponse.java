@@ -2,18 +2,26 @@ package org.example.donatebackend.dto.response;
 
 public class PaymentAccountResponse {
 
-    private String orderCode;   // ID donation (dùng để tracking)
+    private String donationId;   // ID donation (dùng để tracking)
     private String qrUrl;       // link QR
     private Double amount;        // số tiền
     private String addInfo;     // content để match webhook
     private String status;      // PENDING / PAID
 
+    public String getDonationId() {
+        return donationId;
+    }
+
+    public void setDonationId(String donationId) {
+        this.donationId = donationId;
+    }
+
     public String getOrderCode() {
-        return orderCode;
+        return donationId;
     }
 
     public void setOrderCode(String orderCode) {
-        this.orderCode = orderCode;
+        this.donationId = orderCode;
     }
 
     public String getQrUrl() {

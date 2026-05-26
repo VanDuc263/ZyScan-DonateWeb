@@ -1,6 +1,7 @@
 package org.example.donatebackend.service;
 
 import org.example.donatebackend.dto.request.DonationRequest;
+import org.example.donatebackend.dto.request.GenerateQrRequest;
 import org.example.donatebackend.dto.response.DonationResponse;
 import org.example.donatebackend.dto.response.PaymentAccountResponse;
 import org.example.donatebackend.dto.response.TopDonorResponse;
@@ -52,8 +53,11 @@ public class DonationService {
     @Autowired
     private WalletTransactionService walletTransactionService;
 
-    private String generateUniqueContent(Long streamerId) {
-        return "DONATE-" + streamerId + "-" + System.currentTimeMillis();
+    private String generateBankContent(Long streamerId) {
+        return "BANK-DONATE-" + streamerId + "-" + System.currentTimeMillis();
+    }
+    private String generateWalletContent(Long streamerId) {
+        return "SYSTEM-DONATE-" + streamerId + "-" + System.currentTimeMillis();
     }
     private Donation buildDonation(DonationRequest req, String status, String content) {
 
@@ -272,8 +276,8 @@ public class DonationService {
                 + "&addInfo=" + content;
     }
 
-    public PaymentAccountResponse createDonationQR(DonationRequest req, Long streamerId) {
-        String content = generateUniqueContent(req.getStreamerId());
+    public PaymentAccountResponse createDonationBankQR(DonationRequest req, Long streamerId) {
+        String content = generateBankContent(req.getStreamerId());
 
         Donation donation = saveDonation(buildDonation(req,"PENDING",content));
 
@@ -285,7 +289,7 @@ public class DonationService {
 
         String qrUrl = buildQrUrl(req.getAmount(), donation.getContent(), paymentAccountEntity.getQrTemplate());
 
-        res.setOrderCode(donation.getId().toString());
+        res.setDonationId(donation.getId().toString());
         res.setAmount(req.getAmount());
         res.setAddInfo(donation.getContent());
         res.setQrUrl(qrUrl);
@@ -347,5 +351,24 @@ public class DonationService {
         DonationResponse donationResponse = updateDonation(donation);
         donationResponse.setWalletResponse(walletResponse);
         return donationResponse;
+    }
+
+    public PaymentAccountResponse createDonationQR(DonationRequest req,SystemPaymentMethod systemPaymentMethod, Long streamerId) {
+        String content = generateWalletContent(streamerId);
+
+        Donation donation = saveDonation(buildDonation(req,"PENDING",content));
+
+        String qrUrl = buildQrUrl(req.getAmount(), donation.getContent(), systemPaymentMethod.getQrImageUrl());
+
+        System.out.println(qrUrl);
+
+        PaymentAccountResponse res = new PaymentAccountResponse();
+
+        res.setDonationId(donation.getId().toString());
+        res.setAmount(req.getAmount());
+        res.setAddInfo(donation.getContent());
+        res.setQrUrl(qrUrl);
+        res.setStatus("PENDING");
+        return res;
     }
 }

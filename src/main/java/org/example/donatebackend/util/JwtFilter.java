@@ -36,8 +36,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String header = request.getHeader("Authorization");
 
-        System.out.println("JWT FILTER PATH = " + path);
-        System.out.println("AUTH HEADER = " + header);
 
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7).trim();
@@ -48,7 +46,6 @@ public class JwtFilter extends OncePerRequestFilter {
                     String role = jwtUtil.extractRole(token);
 
                     if (role == null || role.isBlank()) {
-                        System.out.println("JWT ROLE IS EMPTY");
                         filterChain.doFilter(request, response);
                         return;
                     }
@@ -57,9 +54,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
                     String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
 
-                    System.out.println("JWT OK USERNAME = " + username);
-                    System.out.println("JWT ROLE = " + role);
-                    System.out.println("JWT AUTHORITY = " + authority);
 
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
