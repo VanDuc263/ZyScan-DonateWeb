@@ -43,7 +43,6 @@ public class TtsController {
                 request,
                 Map.class
         );
-
         return ResponseEntity.ok(response.getBody());
     }
 }

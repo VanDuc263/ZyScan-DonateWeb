@@ -1,12 +1,15 @@
 package org.example.donatebackend.controller;
 
 import org.example.donatebackend.dto.request.DonationRequest;
+import org.example.donatebackend.dto.request.GenerateQrRequest;
 import org.example.donatebackend.dto.response.DonationResponse;
 import org.example.donatebackend.dto.response.PaymentAccountResponse;
 import org.example.donatebackend.dto.response.TopDonorResponse;
 import org.example.donatebackend.entity.Donation;
+import org.example.donatebackend.entity.SystemPaymentMethod;
 import org.example.donatebackend.service.DonationService;
 import org.example.donatebackend.service.StreamerService;
+import org.example.donatebackend.service.SystemPaymentMethodService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -23,13 +26,28 @@ public class DonationController {
     @Autowired
     private StreamerService streamerService;
 
+    @Autowired
+    private SystemPaymentMethodService  systemPaymentMethodService;
+
     @PostMapping("/qr")
     public ResponseEntity<PaymentAccountResponse> createDonationQR(
             @RequestBody DonationRequest req,
             Authentication authentication
     ) {
+        SystemPaymentMethod systemPaymentMethod = systemPaymentMethodService.getByMethodId(req.getMethodId());
+
         return ResponseEntity.ok(
-                donationService.createDonationQR(req, streamerService.getStreamerId(authentication.getName()))
+                donationService.createDonationQR(req,systemPaymentMethod, streamerService.getStreamerId(authentication.getName()))
+        );
+    }
+    @PostMapping("/bank-qr")
+    public ResponseEntity<PaymentAccountResponse> createDonationBankQR(
+            @RequestBody DonationRequest req,
+            Authentication authentication
+    ) {
+
+        return ResponseEntity.ok(
+                donationService.createDonationBankQR(req, streamerService.getStreamerId(authentication.getName()))
         );
     }
 

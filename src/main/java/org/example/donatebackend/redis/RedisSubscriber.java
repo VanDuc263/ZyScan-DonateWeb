@@ -32,6 +32,11 @@ public class RedisSubscriber implements MessageListener {
                     donation
             );
 
+            webSocketService.sendPaymentSuccess(
+                    donation.getId(),
+                    donation
+            );
+
         } catch (Exception e) {
             e.printStackTrace();
         }

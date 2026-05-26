@@ -29,8 +29,7 @@ public class SystemPaymentMethodService {
     private AdminMapperService adminMapperService;
 
     public PaymentQrResponse generateQr(GenerateQrRequest req, UserEntity user) {
-        SystemPaymentMethod method = repository.findById(req.getMethodId())
-                .orElseThrow(() -> new RuntimeException("Method not found"));
+        SystemPaymentMethod method = getByMethodId(req.getMethodId());
 
         BigDecimal amount = BigDecimal.valueOf(req.getAmount());
         BigDecimal fee = amount.multiply(BigDecimal.valueOf(0.01)).setScale(0, RoundingMode.HALF_UP);
@@ -109,5 +108,8 @@ public class SystemPaymentMethodService {
                 + "?amount=" + amount
                 + "&addInfo=" + content
                 + "&account=" + method.getAccountNumber();
+    }
+    public SystemPaymentMethod getByMethodId(Long methodId) {
+        return repository.findById(methodId).orElseThrow(() -> new RuntimeException("Method not found"));
     }
 }
