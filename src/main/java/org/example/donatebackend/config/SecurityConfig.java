@@ -39,6 +39,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/donate/history/received").hasAuthority("ROLE_STREAMER")
                         .requestMatchers("/api/donate/history", "/api/donate/history/sent").authenticated()
                         .requestMatchers("/api/donate/**").permitAll()
+                        .requestMatchers("/api/wallet-transactions/**").permitAll()
 
                         .requestMatchers("/api/streamers/**").permitAll()
                         .requestMatchers("/api/webhooks/**").permitAll()

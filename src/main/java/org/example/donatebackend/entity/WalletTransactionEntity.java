@@ -15,7 +15,7 @@ public class WalletTransactionEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_id", nullable = false)
     private WalletEntity wallet;
 

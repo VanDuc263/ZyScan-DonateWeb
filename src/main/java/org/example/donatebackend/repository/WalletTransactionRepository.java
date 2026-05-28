@@ -2,6 +2,7 @@ package org.example.donatebackend.repository;
 
 import org.example.donatebackend.entity.WalletTransactionEntity;
 import org.example.donatebackend.enums.TransactionStatus;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,4 +20,8 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
 
     @Query("SELECT COALESCE(SUM(w.fee), 0) FROM WalletTransactionEntity w WHERE w.status = :status")
     BigDecimal sumFeeByStatus(@Param("status") TransactionStatus status);
+
+    Page<WalletTransactionEntity>
+    findByWallet_User_IdAndStatusOrderByCreatedAtDesc(Long userId,TransactionStatus status, Pageable pageable);
+
 }
