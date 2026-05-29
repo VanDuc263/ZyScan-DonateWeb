@@ -56,6 +56,9 @@ public class FollowerController {
 
         followerService.follow(user, streamer);
 
+        streamerService.updateFollowers(1,streamer);
+
+
         return ResponseEntity.ok().build();
     }
     @DeleteMapping("/{token}")
@@ -74,7 +77,7 @@ public class FollowerController {
                 user,
                 streamer
         );
-
+        streamerService.updateFollowers(-1,streamer);
         return ResponseEntity.ok().build();
     }
 }

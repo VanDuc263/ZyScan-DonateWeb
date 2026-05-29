@@ -1,5 +1,6 @@
 package org.example.donatebackend.controller;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.example.donatebackend.dto.request.LoginRequest;
 import org.example.donatebackend.dto.request.RegisterRequest;
 import org.example.donatebackend.dto.response.AuthResponse;
@@ -102,9 +103,11 @@ public class AuthController {
 
         String email = payload.getEmail();
         String name = (String) payload.get("name");
+        String picture = (String) payload.get("picture");
+
 
         AuthResponse authResponse =
-                authService.findOrCreateGoogleUser(name, email);
+                authService.findOrCreateGoogleUser(name, email,picture);
 
         StreamerEntity streamer =
                 streamerService.findByUserId(
@@ -127,6 +130,4 @@ public class AuthController {
 
         return response;
     }
-
-
 }

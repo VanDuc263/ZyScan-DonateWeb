@@ -65,4 +65,7 @@ public class WalletService {
         wallet.setBalance(wallet.getBalance().subtract(amount));
         return walletRepository.save(wallet);
     }
+    public void save(WalletEntity wallet) {
+        walletRepository.save(wallet);
+    }
 }

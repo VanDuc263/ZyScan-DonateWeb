@@ -6,6 +6,8 @@ import org.example.donatebackend.dto.response.FollowingResponse;
 import org.example.donatebackend.entity.FollowerEntity;
 import org.example.donatebackend.entity.StreamerEntity;
 import org.example.donatebackend.entity.UserEntity;
+import org.example.donatebackend.exception.AppException;
+import org.example.donatebackend.exception.ErrorCode;
 import org.example.donatebackend.mapper.FollowerMapper;
 import org.example.donatebackend.repository.FollowerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,8 @@ public class FollowerService {
 
     @Autowired
     private FollowerMapper followerMapper;
+
+
 
     public List<FollowerResponse> getFollowersByStreamerId(Long streamerId){
         return followerRepository.findAllByStreamerId(streamerId).stream().map(
@@ -58,7 +62,9 @@ public class FollowerService {
     }
 
     public void unfollow(UserEntity user, StreamerEntity streamer) {
-        FollowerEntity follower = new FollowerEntity();
+        FollowerEntity follower = followerRepository.findByFollowerIdAndStreamerId(user.getId(),streamer.getId()).orElseThrow(
+                () -> new AppException(ErrorCode.INTERNAL_ERROR,"USER OR STREAMER NOT FOUND")
+        );
         follower.setFollower(user);
         follower.setStreamer(streamer);
         follower.setCreatedAt(LocalDateTime.now());

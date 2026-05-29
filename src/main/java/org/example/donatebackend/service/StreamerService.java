@@ -306,6 +306,13 @@ public class StreamerService {
 
         return getBio(streamerId);
     }
+    public void updateFollowers(int cnt,StreamerEntity streamer){
+        int currentFollowers = streamer.getFollowers();
+        int afterFollowers = currentFollowers + cnt;
+
+        streamer.setFollowers(afterFollowers);
+        streamerRepository.save(streamer);
+    }
 }
 
 
