@@ -1,11 +1,15 @@
 package org.example.donatebackend.service;
 
+import org.example.donatebackend.dto.response.WalletTransactionResponse;
 import org.example.donatebackend.entity.UserEntity;
 import org.example.donatebackend.entity.WalletEntity;
 import org.example.donatebackend.entity.WalletTransactionEntity;
 import org.example.donatebackend.enums.TransactionStatus;
 import org.example.donatebackend.repository.WalletTransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -99,7 +103,30 @@ public class WalletTransactionService {
 
         return walletTransactionRepository.save(tx);
     }
-    public WalletTransactionEntity
+
+    public Page<WalletTransactionResponse> getTransactions(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        return walletTransactionRepository
+                .findByWallet_User_IdAndStatusOrderByCreatedAtDesc(userId,TransactionStatus.SUCCESS, pageable)
+                .map(tx -> new WalletTransactionResponse(
+                        tx.getId(),
+                        tx.getType(),
+                        tx.getAmount(),
+                        tx.getBalanceBefore(),
+                        tx.getBalanceAfter(),
+                        tx.getFee(),
+                        tx.getNetAmount(),
+                        tx.getReferenceType(),
+                        tx.getReferenceId(),
+                        tx.getStatus().name(),
+                        tx.getCreatedAt(),
+                        tx.getTransactionCode(),
+                        tx.getReferenceCode()
+                ));
+    }
+
+        public WalletTransactionEntity
     findByTransactionCodeAndStatus(
             String transactionCode,
             TransactionStatus status
@@ -118,4 +145,5 @@ public class WalletTransactionService {
 
         return walletTransactionRepository.save(tx);
     }
+
 }
