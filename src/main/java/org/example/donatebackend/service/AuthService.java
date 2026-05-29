@@ -1,6 +1,7 @@
 package org.example.donatebackend.service;
 
 import com.google.common.base.Optional;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.example.donatebackend.dto.response.AuthResponse;
 import org.example.donatebackend.dto.response.UserResponse;
 import org.example.donatebackend.entity.UserEntity;
@@ -10,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.example.donatebackend.entity.UserEntity.Role;
+
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -73,14 +76,18 @@ public class AuthService {
         userEntity.setRole(role);
         userRepository.save(userEntity);
     }
-    public AuthResponse findOrCreateGoogleUser(String username, String email) {
+    public AuthResponse findOrCreateGoogleUser(String username, String email,String picture) {
         UserEntity userEntity=  userRepository.findByEmail(email)
                 .orElseGet(() -> {
+                    String randomPassword = UUID.randomUUID().toString();
+
                     UserEntity newUser = new UserEntity();
                     newUser.setEmail(email);
-                    newUser.setUsername(username);
-                    newUser.setPassword("123456");
+                    newUser.setUsername(generateUsername(email));
+                    newUser.setPassword(passwordEncoder.encode(randomPassword));
                     newUser.setRole(Role.USER);
+                    newUser.setFullName(username);
+                    newUser.setAvatar(picture);
                     return userRepository.save(newUser);
                 });
         AuthResponse authResponse = new AuthResponse();
@@ -110,4 +117,21 @@ public class AuthService {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("user not found"));
     }
+
+    private String generateUsername(String email) {
+        String baseUsername = email.split("@")[0]
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]", "");
+
+        String username;
+
+        do {
+            username = baseUsername +
+                    RandomStringUtils.randomNumeric(4);
+        } while (userRepository.existsByUsername(username));
+
+        return username;
+    }
+
+
 }
