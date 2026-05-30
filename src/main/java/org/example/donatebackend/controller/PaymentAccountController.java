@@ -26,6 +26,13 @@ public class PaymentAccountController {
         return ResponseEntity.ok(paymentAccountService.savePaymentAccount(paymentAccountRequest,streamerService.getStreamerId(authentication.getName())));
     }
 
+    @GetMapping("/bank-account")
+    public ResponseEntity<?> getBankAccount(
+            Authentication authentication
+    ){
+        return ResponseEntity.ok(paymentAccountService.getBankAccountByStreamerId(streamerService.getStreamerId(authentication.getName())));
+    }
+
     @GetMapping("/qr")
     public ResponseEntity<?> getQrUrl(Authentication authentication){
         return ResponseEntity.ok(paymentAccountService.getQrUrlByStreamerId(streamerService.getStreamerId(authentication.getName())));
