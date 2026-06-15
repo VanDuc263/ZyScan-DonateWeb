@@ -21,6 +21,7 @@ public class StreamerSettingController {
                 streamerSettingsService.getMyConfig(authentication.getName())
         );
     }
+
     @PostMapping("/update")
     public ResponseEntity<?> updateSettings(
             Authentication authentication,

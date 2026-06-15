@@ -48,6 +48,9 @@ public class StreamerService {
     @Autowired
     private StreamerSocialLinkRepository  streamerSocialLinkRepository;
 
+    @Autowired
+    private ProductPromotionService productPromotionService;
+
 
     public StreamerEntity createStreamer(StreamerRequest request){
         String username = Objects.requireNonNull(SecurityContextHolder.getContext()
@@ -126,6 +129,9 @@ public class StreamerService {
         ).toList();
 
         streamerDetailReponse.setSocialLinks(streamerSocialLinkResponses);
+        streamerDetailReponse.setProductPromotions(
+                productPromotionService.getPromotionsByStreamerId(streamer.getId())
+        );
 
         return streamerDetailReponse;
     }
@@ -194,6 +200,10 @@ public class StreamerService {
         String url = fileUploadService.upload("THUMB", file);
         updateThumb(token, url);
         return url;
+    }
+
+    public String uploadProductPromotionImage(MultipartFile file) {
+        return fileUploadService.upload("PRODUCT_PROMOTION", file);
     }
 
     public Long getStreamerId(String username) {

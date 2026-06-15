@@ -19,6 +19,7 @@ public class DonationResponse {
     private LocalDateTime createdAt;
     private String content;
     private String referenceCode;
+    private Boolean blockedByStreamer;
 
     private List<TopDonorResponse> topDonors;
     private WalletResponse walletResponse;
@@ -125,6 +126,14 @@ public class DonationResponse {
 
     public void setReferenceCode(String referenceCode) {
         this.referenceCode = referenceCode;
+    }
+
+    public Boolean getBlockedByStreamer() {
+        return blockedByStreamer;
+    }
+
+    public void setBlockedByStreamer(Boolean blockedByStreamer) {
+        this.blockedByStreamer = blockedByStreamer;
     }
 
     public List<TopDonorResponse> getTopDonors() {

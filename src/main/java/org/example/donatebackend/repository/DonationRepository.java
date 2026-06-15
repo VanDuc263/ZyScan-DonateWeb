@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 public interface DonationRepository extends JpaRepository<Donation, Long> {
 
@@ -54,4 +55,23 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
 
     @Query("SELECT COALESCE(SUM(d.amount), 0) FROM Donation d WHERE d.streamer.id = :streamerId AND d.status = 'SUCCESS'")
     Double sumSuccessAmountByStreamerId(@Param("streamerId") Long streamerId);
+
+    @Query(
+            value = """
+            SELECT DATE(created_at) AS stat_date, COUNT(*) AS donation_count, COALESCE(SUM(amount), 0) AS revenue
+            FROM donations
+            WHERE streamer_id = :streamerId
+              AND status = 'SUCCESS'
+              AND created_at >= :startDateTime
+              AND created_at < :endDateTime
+            GROUP BY DATE(created_at)
+            ORDER BY DATE(created_at)
+            """,
+            nativeQuery = true
+    )
+    List<Object[]> getDailyStatistics(
+            @Param("streamerId") Long streamerId,
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime
+    );
 }

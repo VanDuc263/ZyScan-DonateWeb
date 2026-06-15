@@ -13,6 +13,7 @@ public class StreamerDetailResponse {
     private String qrUrl;
     private boolean following;
     private List<StreamerSocialLinkResponse> socialLinks;
+    private List<ProductPromotionResponse> productPromotions;
 
 
     public Long getStreamerId() {
@@ -94,5 +95,13 @@ public class StreamerDetailResponse {
 
     public void setSocialLinks(List<StreamerSocialLinkResponse> socialLinks) {
         this.socialLinks = socialLinks;
+    }
+
+    public List<ProductPromotionResponse> getProductPromotions() {
+        return productPromotions;
+    }
+
+    public void setProductPromotions(List<ProductPromotionResponse> productPromotions) {
+        this.productPromotions = productPromotions;
     }
 }
