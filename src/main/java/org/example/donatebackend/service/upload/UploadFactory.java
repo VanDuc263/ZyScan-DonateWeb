@@ -11,11 +11,13 @@ public class UploadFactory {
 
     public UploadFactory(UserAvatarUpload user,
                          StreamerAvatarUpload streamer,
-                         ThumbnailUpload thumb) {
+                         ThumbnailUpload thumb,
+                         ProductPromotionUpload productPromotionUpload) {
         strategies = Map.of(
                 "USER", user,
                 "STREAMER", streamer,
-                "THUMB", thumb
+                "THUMB", thumb,
+                "PRODUCT_PROMOTION", productPromotionUpload
         );
     }
     public UploadStrategy get(String type) {

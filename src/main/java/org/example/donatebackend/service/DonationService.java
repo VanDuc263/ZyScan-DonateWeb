@@ -7,6 +7,8 @@ import org.example.donatebackend.dto.response.PaymentAccountResponse;
 import org.example.donatebackend.dto.response.TopDonorResponse;
 import org.example.donatebackend.dto.response.WalletResponse;
 import org.example.donatebackend.entity.*;
+import org.example.donatebackend.exception.AppException;
+import org.example.donatebackend.exception.ErrorCode;
 import org.example.donatebackend.redis.RedisPublisher;
 import org.example.donatebackend.repository.DonationRepository;
 import org.example.donatebackend.repository.PaymentAccountRepository;
@@ -53,13 +55,31 @@ public class DonationService {
     @Autowired
     private WalletTransactionService walletTransactionService;
 
+    @Autowired
+    private StreamerBlockService streamerBlockService;
+
     private String generateBankContent(Long streamerId) {
         return "BANK-DONATE-" + streamerId + "-" + System.currentTimeMillis();
     }
     private String generateWalletContent(Long streamerId) {
         return "SYSTEM-DONATE-" + streamerId + "-" + System.currentTimeMillis();
     }
+
+    private void validateBlockedDonor(Long streamerId, Long donorId) {
+        if (donorId == null) {
+            return;
+        }
+
+        if (streamerBlockService.isBlocked(streamerId, donorId)) {
+            throw new AppException(
+                    ErrorCode.INVALID_REQUEST,
+                    "Bạn đã bị streamer chặn nên không thể donate"
+            );
+        }
+    }
+
     private Donation buildDonation(DonationRequest req, String status, String content) {
+        validateBlockedDonor(req.getStreamerId(), req.getDonorId());
 
         StreamerEntity streamer = streamerRepository.findById(req.getStreamerId())
                 .orElseThrow(() -> new RuntimeException("Streamer not found"));
@@ -247,6 +267,15 @@ public class DonationService {
             );
         }
 
+        Long streamerId = streamerRepository.findByUserId(user.getId())
+                .map(StreamerEntity::getId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND,
+                        "Không tìm thấy streamer"
+                ));
+
+        java.util.Set<Long> blockedUserIds = streamerBlockService.getBlockedUserIds(streamerId);
+
         List<Donation> donations =
                 donationRepository.findByStreamer_UserIdAndStatusOrderByCreatedAtDesc(
                         user.getId(),
@@ -255,7 +284,13 @@ public class DonationService {
                 );
 
         return donations.stream()
-                .map(this::toDonationResponse)
+                .map(donation -> {
+                    DonationResponse response = toDonationResponse(donation);
+                    response.setBlockedByStreamer(
+                            donation.getDonorId() != null && blockedUserIds.contains(donation.getDonorId())
+                    );
+                    return response;
+                })
                 .toList();
     }
 

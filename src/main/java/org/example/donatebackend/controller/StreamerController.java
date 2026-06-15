@@ -4,11 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.donatebackend.dto.request.SocialLinkRequest;
 import org.example.donatebackend.dto.request.StreamerRequest;
 import org.example.donatebackend.dto.request.UpdateStreamerBioRequest;
+import org.example.donatebackend.dto.request.ProductPromotionRequest;
 import org.example.donatebackend.dto.response.*;
 import org.example.donatebackend.entity.StreamerEntity;
 import org.example.donatebackend.entity.UserEntity;
 import org.example.donatebackend.mapper.UserMapper;
+import org.example.donatebackend.service.ProductPromotionService;
+import org.example.donatebackend.service.StreamerBlockService;
 import org.example.donatebackend.service.StreamerService;
+import org.example.donatebackend.service.StreamerStatisticsService;
 import org.example.donatebackend.service.UserService;
 import org.example.donatebackend.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,6 +42,15 @@ public class StreamerController {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private ProductPromotionService productPromotionService;
+
+    @Autowired
+    private StreamerStatisticsService streamerStatisticsService;
+
+    @Autowired
+    private StreamerBlockService streamerBlockService;
 
     @PostMapping("/create")
     public ResponseEntity<AuthResponse> createStreamer(@ModelAttribute StreamerRequest req) {
@@ -111,6 +125,74 @@ public class StreamerController {
 
         return ResponseEntity.ok(streamerService.getBio(streamerId));
     }
+
+    @GetMapping("/me/product-promotions")
+    public ResponseEntity<List<ProductPromotionResponse>> getMyProductPromotions(
+            Authentication authentication
+    ) {
+        return ResponseEntity.ok(
+                productPromotionService.getMyPromotions(authentication.getName())
+        );
+    }
+
+    @GetMapping("/me/statistics")
+    public ResponseEntity<StreamerStatisticsResponse> getMyStatistics(
+            Authentication authentication,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
+    ) {
+        return ResponseEntity.ok(
+                streamerStatisticsService.getMyStatistics(
+                        authentication.getName(),
+                        startDate,
+                        endDate
+                )
+        );
+    }
+
+    @GetMapping("/me/blocks")
+    public ResponseEntity<List<StreamerBlockResponse>> getMyBlocks(Authentication authentication) {
+        return ResponseEntity.ok(
+                streamerBlockService.getMyBlockedUsers(authentication.getName())
+        );
+    }
+
+    @PostMapping("/me/blocks/{userId}")
+    public ResponseEntity<StreamerBlockResponse> blockUser(
+            Authentication authentication,
+            @PathVariable Long userId
+    ) {
+        return ResponseEntity.ok(
+                streamerBlockService.blockUser(authentication.getName(), userId)
+        );
+    }
+
+    @DeleteMapping("/me/blocks/{userId}")
+    public ResponseEntity<Void> unblockUser(
+            Authentication authentication,
+            @PathVariable Long userId
+    ) {
+        streamerBlockService.unblockUser(authentication.getName(), userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/me/product-promotions")
+    public ResponseEntity<List<ProductPromotionResponse>> saveMyProductPromotions(
+            Authentication authentication,
+            @RequestBody List<ProductPromotionRequest> request
+    ) {
+        return ResponseEntity.ok(
+                productPromotionService.saveMyPromotions(authentication.getName(), request)
+        );
+    }
+
+    @PostMapping(value = "/me/product-promotions/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> uploadProductPromotionImage(
+            @RequestPart("file") MultipartFile file
+    ) {
+        return ResponseEntity.ok(productPromotionService.uploadPromotionImage(file));
+    }
+
     @PutMapping(value = "/me/bio", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<StreamerProfileResponse> updateBio(
             Authentication authentication,
