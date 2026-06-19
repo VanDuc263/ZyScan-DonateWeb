@@ -22,6 +22,6 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
     BigDecimal sumFeeByStatus(@Param("status") TransactionStatus status);
 
     Page<WalletTransactionEntity>
-    findByWallet_User_IdAndStatusOrderByCreatedAtDesc(Long userId,TransactionStatus status, Pageable pageable);
+    findByWallet_User_IdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
 }

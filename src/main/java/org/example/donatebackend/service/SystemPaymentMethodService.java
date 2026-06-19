@@ -6,6 +6,7 @@ import org.example.donatebackend.dto.response.AdminPaymentMethodResponse;
 import org.example.donatebackend.dto.response.PaymentQrResponse;
 import org.example.donatebackend.entity.SystemPaymentMethod;
 import org.example.donatebackend.entity.UserEntity;
+import org.example.donatebackend.entity.WalletEntity;
 import org.example.donatebackend.repository.SystemPaymentMethodRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,9 @@ public class SystemPaymentMethodService {
     @Autowired
     private AdminMapperService adminMapperService;
 
+    @Autowired
+    private WalletService walletService;
+
     public PaymentQrResponse generateQr(GenerateQrRequest req, UserEntity user) {
         SystemPaymentMethod method = getByMethodId(req.getMethodId());
 
@@ -41,7 +45,12 @@ public class SystemPaymentMethodService {
                 .substring(0, 8)
                 .toUpperCase();
 
-        walletTransactionService.createWalletTransaction(user, "DEPOSIT", totalAmount, fee, amount, content);
+        WalletEntity wallet = walletService.getOrCreateWallet(user);
+
+        BigDecimal before = wallet.getBalance();
+        BigDecimal after = before.add(amount);
+
+        walletTransactionService.createWalletTransaction(user, "DEPOSIT", totalAmount, fee, amount, content,before,after);
 
         String qrUrl = buildQrUrl(method, totalAmount, content);
 

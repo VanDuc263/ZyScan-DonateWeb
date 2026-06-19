@@ -37,9 +37,15 @@ public class WithdrawalService {
             throw new AppException(ErrorCode.INTERNAL_ERROR, "Insufficient balance");
         }
 
+        BigDecimal before = wallet.getBalance();
+        BigDecimal after = before.subtract(amount);
 
-        wallet.setBalance(wallet.getBalance().subtract(amount));
-        wallet.setFrozenBalance(wallet.getFrozenBalance().add(amount));
+        wallet.setBalance(after);
+        wallet.setFrozenBalance(
+                wallet.getFrozenBalance().add(amount)
+        );
+
+
 
         walletService.save(wallet);
 
@@ -51,7 +57,7 @@ public class WithdrawalService {
 
 
 
-        WalletTransactionEntity transaction = walletTransactionService.createWalletTransaction(user,"WITHDRAW",amount,BigDecimal.ZERO,amount,content);
+        WalletTransactionEntity transaction = walletTransactionService.createWalletTransaction(user,"WITHDRAW",amount,BigDecimal.ZERO,amount,content,before,after);
         return new WithdrawResponse(
                 transaction.getTransactionCode(),
                 amount,

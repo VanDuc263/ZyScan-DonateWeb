@@ -22,13 +22,19 @@ public class WalletTransactionService {
     @Autowired
     private WalletService walletService;
 
+    private boolean isCredit(String type){
+        return type.equals("DEPOSIT") || type.equals("DONATION_IN") || type.equals("REFUND");
+    }
+
     public WalletTransactionEntity createWalletTransaction(
             UserEntity userEntity,
             String type,
             BigDecimal totalAmount,
             BigDecimal fee,
             BigDecimal netAmount,
-            String transactionCode
+            String transactionCode,
+            BigDecimal balanceBefore,
+            BigDecimal balanceAfter
     ) {
 
         WalletEntity walletEntity =
@@ -53,15 +59,9 @@ public class WalletTransactionService {
 
         tx.setTransactionCode(transactionCode);
 
-        BigDecimal balance =
-                walletEntity.getBalance();
+        tx.setBalanceBefore(balanceBefore);
 
-        BigDecimal newBalance =
-                balance.add(netAmount);
-
-        tx.setBalanceBefore(balance);
-
-        tx.setBalanceAfter(newBalance);
+        tx.setBalanceAfter(balanceAfter);
 
         tx.setStatus(
                 TransactionStatus.PENDING
@@ -108,7 +108,7 @@ public class WalletTransactionService {
         Pageable pageable = PageRequest.of(page, size);
 
         return walletTransactionRepository
-                .findByWallet_User_IdAndStatusOrderByCreatedAtDesc(userId,TransactionStatus.SUCCESS, pageable)
+                .findByWallet_User_IdOrderByCreatedAtDesc(userId, pageable)
                 .map(tx -> new WalletTransactionResponse(
                         tx.getId(),
                         tx.getType(),
