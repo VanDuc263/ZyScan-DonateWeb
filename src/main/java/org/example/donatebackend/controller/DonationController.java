@@ -37,7 +37,7 @@ public class DonationController {
         SystemPaymentMethod systemPaymentMethod = systemPaymentMethodService.getByMethodId(req.getMethodId());
 
         return ResponseEntity.ok(
-                donationService.createDonationQR(req,systemPaymentMethod, streamerService.getStreamerId(authentication.getName()))
+                donationService.createDonationQR(req,systemPaymentMethod,req.getStreamerId())
         );
     }
     @PostMapping("/bank-qr")
@@ -47,7 +47,7 @@ public class DonationController {
     ) {
 
         return ResponseEntity.ok(
-                donationService.createDonationBankQR(req, streamerService.getStreamerId(authentication.getName()))
+                donationService.createDonationBankQR(req,req.getStreamerId())
         );
     }
 

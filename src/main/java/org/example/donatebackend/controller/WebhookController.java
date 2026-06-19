@@ -1,10 +1,7 @@
 package org.example.donatebackend.controller;
 
 import org.example.donatebackend.dto.request.SePayWebhookRequest;
-import org.example.donatebackend.entity.Donation;
-import org.example.donatebackend.entity.StreamerEntity;
-import org.example.donatebackend.entity.UserEntity;
-import org.example.donatebackend.entity.WalletTransactionEntity;
+import org.example.donatebackend.entity.*;
 import org.example.donatebackend.enums.TransactionStatus;
 import org.example.donatebackend.service.DonationService;
 import org.example.donatebackend.service.UserService;
@@ -152,8 +149,12 @@ public class WebhookController {
 
                 Double amount = donation.getAmount();
 
+                WalletEntity wallet = walletService.getOrCreateWallet(user);
 
-                WalletTransactionEntity tx =  walletTransactionService.createWalletTransaction(user,"DEPOSIT",BigDecimal.valueOf(amount),BigDecimal.valueOf(0),BigDecimal.valueOf(amount),content);
+                BigDecimal before = wallet.getBalance();
+                BigDecimal after = before.add(BigDecimal.valueOf(amount));
+
+                WalletTransactionEntity tx =  walletTransactionService.createWalletTransaction(user,"DEPOSIT",BigDecimal.valueOf(amount),BigDecimal.valueOf(0),BigDecimal.valueOf(amount),content,before,after);
 
                 tx.setStatus(
                         TransactionStatus.SUCCESS

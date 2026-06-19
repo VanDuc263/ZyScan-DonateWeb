@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class DonationService {
@@ -59,10 +60,16 @@ public class DonationService {
     private StreamerBlockService streamerBlockService;
 
     private String generateBankContent(Long streamerId) {
-        return "BANK-DONATE-" + streamerId + "-" + System.currentTimeMillis();
+        return "BANK-DONATE-" +
+                streamerId + "-" +
+                System.currentTimeMillis() + "-" +
+                UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
     private String generateWalletContent(Long streamerId) {
-        return "SYSTEM-DONATE-" + streamerId + "-" + System.currentTimeMillis();
+        return "SYSTEM-DONATE-" +
+                streamerId + "-" +
+                System.currentTimeMillis() + "-" +
+                UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
     private void validateBlockedDonor(Long streamerId, Long donorId) {
