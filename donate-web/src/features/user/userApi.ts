@@ -1,0 +1,16 @@
+import axiosClient from "../../services/exiosClient";
+
+export const uploadAvatar = (file : File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return axiosClient.post("/api/user/avatar", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data"
+        }
+    });
+
+}
+export const updateProfile = (data: { fullName: string; email: string }) => {
+    return axiosClient.put("/api/user/profile", data);
+}
