@@ -4,11 +4,14 @@ import org.example.donatebackend.dto.request.AdminUpdateStreamerRequest;
 import org.example.donatebackend.dto.response.AdminStreamerResponse;
 import org.example.donatebackend.entity.StreamerEntity;
 import org.example.donatebackend.repository.StreamerRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
+import static org.example.donatebackend.config.CacheConfig.STREAMER_BY_ID_CACHE;
 
 @Service
 public class AdminStreamerService {
@@ -32,6 +35,7 @@ public class AdminStreamerService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = STREAMER_BY_ID_CACHE, key = "#id")
     public AdminStreamerResponse update(Long id, AdminUpdateStreamerRequest req) {
         StreamerEntity streamer = streamerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Streamer not found"));
@@ -51,6 +55,7 @@ public class AdminStreamerService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = STREAMER_BY_ID_CACHE, key = "#id")
     public void delete(Long id) {
         StreamerEntity streamer = streamerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Streamer not found"));

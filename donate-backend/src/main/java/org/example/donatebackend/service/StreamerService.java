@@ -14,6 +14,9 @@ import org.example.donatebackend.exception.ErrorCode;
 import org.example.donatebackend.repository.StreamerRepository;
 import org.example.donatebackend.repository.StreamerSocialLinkRepository;
 import org.example.donatebackend.repository.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
+
+import static org.example.donatebackend.config.CacheConfig.STREAMER_BY_ID_CACHE;
 
 @Service
 public class StreamerService {
@@ -51,7 +56,7 @@ public class StreamerService {
     @Autowired
     private ProductPromotionService productPromotionService;
 
-
+    @CachePut(cacheNames = STREAMER_BY_ID_CACHE, key = "#result.id", unless = "#result == null")
     public StreamerEntity createStreamer(StreamerRequest request){
         String username = Objects.requireNonNull(SecurityContextHolder.getContext()
                 .getAuthentication()).getName();
@@ -178,12 +183,21 @@ public class StreamerService {
         return streamerRepository.findByUserId(userId).orElse(null);
     }
 
+    @Transactional
+    @Cacheable(cacheNames = STREAMER_BY_ID_CACHE, key = "#streamerId")
+    public StreamerEntity getRequiredById(Long streamerId) {
+        return streamerRepository.findById(streamerId)
+                .orElseThrow(() -> new RuntimeException("Streamer not found"));
+    }
+
+    @CachePut(cacheNames = STREAMER_BY_ID_CACHE, key = "#result.id", unless = "#result == null")
     public StreamerEntity updateAvatar(String token, String url) {
         StreamerEntity streamer = streamerRepository.findByToken(token);
         streamer.setAvatar(url);
         return streamerRepository.save(streamer);
     }
 
+    @CachePut(cacheNames = STREAMER_BY_ID_CACHE, key = "#result.id", unless = "#result == null")
     public StreamerEntity updateThumb(String token, String url) {
         StreamerEntity streamer = streamerRepository.findByToken(token);
         streamer.setThumb(url);
@@ -263,6 +277,7 @@ public class StreamerService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = STREAMER_BY_ID_CACHE, key = "#streamerId")
     public StreamerProfileResponse updateBio(
             Long streamerId,
             UpdateStreamerBioRequest request,
@@ -316,6 +331,8 @@ public class StreamerService {
 
         return getBio(streamerId);
     }
+
+    @CacheEvict(cacheNames = STREAMER_BY_ID_CACHE, key = "#streamer.id")
     public void updateFollowers(int cnt,StreamerEntity streamer){
         int currentFollowers = streamer.getFollowers();
         int afterFollowers = currentFollowers + cnt;

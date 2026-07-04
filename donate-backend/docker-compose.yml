@@ -1,0 +1,35 @@
+services:
+
+  mysql:
+    image: mysql:8
+
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: donate-web
+
+    ports:
+      - "3306:3306"
+
+  redis:
+    image: redis:7
+
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: .
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      DB_URL: jdbc:postgresql://aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0
+      DB_USER: postgres.ismbjtwsbosnwwrslwpt
+      DB_PASSWORD: Ducvan26324@
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+    depends_on:
+      - mysql
+      - redis

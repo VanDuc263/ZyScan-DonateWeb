@@ -42,6 +42,9 @@ public class DonationService {
     private StreamerRepository streamerRepository;
 
     @Autowired
+    private StreamerService streamerService;
+
+    @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
     @Autowired
@@ -88,8 +91,7 @@ public class DonationService {
     private Donation buildDonation(DonationRequest req, String status, String content) {
         validateBlockedDonor(req.getStreamerId(), req.getDonorId());
 
-        StreamerEntity streamer = streamerRepository.findById(req.getStreamerId())
-                .orElseThrow(() -> new RuntimeException("Streamer not found"));
+        StreamerEntity streamer = streamerService.getRequiredById(req.getStreamerId());
 
         Donation donation = new Donation();
         donation.setStreamer(streamer);

@@ -8,6 +8,8 @@ import org.example.donatebackend.entity.SystemPaymentMethod;
 import org.example.donatebackend.entity.UserEntity;
 import org.example.donatebackend.entity.WalletEntity;
 import org.example.donatebackend.repository.SystemPaymentMethodRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
+
+import static org.example.donatebackend.config.CacheConfig.SYSTEM_PAYMENT_METHOD_BY_ID_CACHE;
 
 @Service
 public class SystemPaymentMethodService {
@@ -77,6 +81,7 @@ public class SystemPaymentMethodService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = SYSTEM_PAYMENT_METHOD_BY_ID_CACHE, key = "#id")
     public AdminPaymentMethodResponse adminUpdate(Long id, PaymentMethodRequest req) {
         SystemPaymentMethod method = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Payment method not found"));
@@ -85,6 +90,7 @@ public class SystemPaymentMethodService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = SYSTEM_PAYMENT_METHOD_BY_ID_CACHE, key = "#id")
     public void adminDelete(Long id) {
         if (!repository.existsById(id)) {
             throw new RuntimeException("Payment method not found");
@@ -118,6 +124,9 @@ public class SystemPaymentMethodService {
                 + "&addInfo=" + content
                 + "&account=" + method.getAccountNumber();
     }
+
+    @Transactional(readOnly = true)
+    @Cacheable(cacheNames = SYSTEM_PAYMENT_METHOD_BY_ID_CACHE, key = "#methodId")
     public SystemPaymentMethod getByMethodId(Long methodId) {
         return repository.findById(methodId).orElseThrow(() -> new RuntimeException("Method not found"));
     }

@@ -21,9 +21,8 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-                .cors(Customizer.withDefaults())
-                .csrf(AbstractHttpConfigurer::disable)
-                .formLogin(AbstractHttpConfigurer::disable)
+                .cors(cors -> {})
+                .csrf(csrf -> csrf.disable())                .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -53,6 +52,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/user/**").hasAnyAuthority("ROLE_USER", "ROLE_STREAMER", "ROLE_ADMIN")
 
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
+
+                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/metrics/**").permitAll()
+
 
                         .anyRequest().authenticated()
                 );
