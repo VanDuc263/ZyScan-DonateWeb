@@ -22,7 +22,7 @@ const Streamers = () => {
     const dispatch = useDispatch<AppDispatch>();
 
     useEffect(() => {
-        dispatch(fetchTopStreamer());
+        const res = dispatch(fetchTopStreamer());
     }, [dispatch]);
 
     const { topStreamers } = useSelector((state: any) => state.streamer);
@@ -36,14 +36,14 @@ const Streamers = () => {
             </div>
 
             <div className="streamers-rail">
-                {topStreamers.slice(0, 8).map((s: any, i: number) => (
+                {topStreamers.map((s: any, i: number) => (
                     <Link
                         to={`/streamer/${s.token}`}
                         key={s.id || s.streamerId}
-                        className="card"
+                        className={`card ${i === 0 ? "featured" : ""}`}
                     >
+                        <span className="rank">#{i + 1}</span>
                         <img src={s.avatar} alt={s.displayName} />
-                        <div className="rank">{i + 1}</div>
                         <h3 className="streamers-rail__name">{s.displayName}</h3>
                         <p className="money">{convertAmount(s.totalAmount)} VND</p>
                     </Link>
